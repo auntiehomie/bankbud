@@ -153,7 +153,7 @@ function generateReasoning(rate: any, preferences: UserPreferences): string {
   }
   
   if (preferences.preferredFeatures && rate.features) {
-    const matchingFeatures = rate.features.filter(f => 
+    const matchingFeatures = rate.features.filter((f: string) => 
       preferences.preferredFeatures!.includes(f)
     );
     if (matchingFeatures.length > 0) {
