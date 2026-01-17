@@ -25,7 +25,7 @@ export async function searchAndExtractRates(
 
     // Step 2: Use Gemini to search and analyze
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-pro',
+      model: 'gemini-1.5-pro',
       generationConfig: {
         temperature: 0.1,
       }
