@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BankRate, UserPreferences, AIRecommendation, CommunitySubmission, ChatResponse, ConversationHistory } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || '/api';
 
 export const api = {
   // Get all rates
