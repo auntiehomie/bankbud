@@ -281,8 +281,8 @@ const bankScrapers = {
         {
           bankName: 'Barclays Bank',
           accountType: 'savings',
-          rate: 4.75,
-          apy: 4.85,
+          rate: 4.25,
+          apy: 4.25,
           minDeposit: 0,
           features: ['No Monthly Fee', 'Online Banking', 'Mobile Banking', 'No Minimum Balance', 'FDIC Insured'],
           url: savingsUrl
@@ -290,11 +290,21 @@ const bankScrapers = {
         {
           bankName: 'Barclays Bank',
           accountType: 'cd',
-          rate: 5.00,
-          apy: 5.00,
+          rate: 4.75,
+          apy: 4.75,
           minDeposit: 0,
           term: 12,
-          features: ['No Monthly Fee', 'Fixed Rate', 'FDIC Insured'],
+          features: ['No Monthly Fee', 'Fixed Rate', 'FDIC Insured', 'Early Withdrawal Penalty'],
+          url: cdUrl
+        },
+        {
+          bankName: 'Barclays Bank',
+          accountType: 'cd',
+          rate: 4.50,
+          apy: 4.50,
+          minDeposit: 0,
+          term: 6,
+          features: ['No Monthly Fee', 'Fixed Rate', 'FDIC Insured', 'Early Withdrawal Penalty'],
           url: cdUrl
         }
       ];

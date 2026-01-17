@@ -432,12 +432,31 @@ function RateCard({
   onVerify: (id: string, rate: BankRate) => void;
   onReport: (id: string, rate: BankRate) => void;
 }) {
+  const accountTypeLabels: Record<string, string> = {
+    'savings': 'Savings Account',
+    'checking': 'Checking Account', 
+    'cd': 'Certificate of Deposit',
+    'money-market': 'Money Market Account'
+  };
+
+  const accountTypeColors: Record<string, string> = {
+    'savings': 'type-savings',
+    'checking': 'type-checking',
+    'cd': 'type-cd',
+    'money-market': 'type-money-market'
+  };
+
   return (
     <div className="rate-card">
       <div className="rate-card-header">
         <div>
           <h3>{rate.bankName}</h3>
-          <span className="account-type-badge">{rate.accountType}</span>
+          <span className={`account-type-badge ${accountTypeColors[rate.accountType]}`}>
+            {accountTypeLabels[rate.accountType] || rate.accountType}
+          </span>
+          {rate.term && (
+            <span className="term-badge">{rate.term} Month{rate.term > 1 ? 's' : ''}</span>
+          )}
           <span className={`availability-badge ${rate.availability}`}>
             {rate.availability === 'national' ? '🌎 National' : 
              rate.availability === 'regional' ? '📍 Regional' : 
@@ -464,7 +483,7 @@ function RateCard({
       </div>
 
       <div className="rate-card-body">
-        {rate.minDeposit && (
+        {rate.minDeposit !== undefined && (
           <div className="rate-detail">
             <span className="label">Min. Deposit:</span>
             <span className="value">${rate.minDeposit.toLocaleString()}</span>
