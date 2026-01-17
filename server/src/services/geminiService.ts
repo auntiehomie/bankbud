@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 import BankRate from '../models/BankRate.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -16,50 +17,61 @@ interface AIFoundRate {
 }
 
 /**
- * Use Gemini AI to search for and extract current bank rates from the web
+ * Use Gemini AI with Google Search to find current bank rates
  */
 export async function findRatesWithAI(
   bankName?: string,
   accountType?: string
 ): Promise<AIFoundRate[]> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // Use gemini-1.5-flash for better real-time capabilities
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        temperature: 0.1, // Lower temperature for more factual responses
+      }
+    });
 
+    const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    
     const query = bankName && accountType
-      ? `Find the current ${accountType} account rate for ${bankName} as of January 2026. Include the APY, minimum deposit, and any key features.`
+      ? `What is the current ${accountType} account APY/rate for ${bankName} in the United States as of ${currentDate}?`
       : bankName
-      ? `Find the current savings and checking account rates for ${bankName} as of January 2026.`
-      : `Find the top 5 highest savings account rates from online banks as of January 2026.`;
+      ? `What are the current savings account, checking account, and CD rates (APY) for ${bankName} in the United States as of ${currentDate}?`
+      : `What are the top 5 highest online savings account rates (APY) in the United States as of ${currentDate}? Include banks like Marcus, Ally, Discover, Capital One, American Express, and others.`;
 
-    const prompt = `${query}
+    const prompt = `You are a financial data researcher. Search the web for CURRENT bank interest rates.
 
-Please provide the information in this exact JSON format:
+QUERY: ${query}
+
+INSTRUCTIONS:
+1. Find the EXACT current rates from official bank websites or reliable financial sources (Bankrate, NerdWallet, etc.)
+2. Include the source URL where you found each rate
+3. Only include rates you can verify from recent sources (within the last 7 days)
+4. For CDs, specify the term length
+5. Mark confidence as "high" only if from official bank website, "medium" if from financial news sites, "low" if uncertain
+
+Respond ONLY with valid JSON in this exact format (no other text):
 {
   "rates": [
     {
       "bankName": "Bank Name",
-      "accountType": "savings|checking|cd|money-market",
-      "rate": 4.50,
-      "apy": 4.50,
+      "accountType": "savings",
+      "rate": 4.25,
+      "apy": 4.25,
       "minDeposit": 0,
-      "term": 12,
-      "features": ["Feature 1", "Feature 2"],
+      "features": ["No Monthly Fee", "FDIC Insured"],
       "sourceUrl": "https://...",
-      "confidence": "high|medium|low"
+      "confidence": "high"
     }
   ]
-}
-
-Important:
-- Use only real, current data from January 2026
-- Include the official bank website URL as sourceUrl
-- Set confidence based on how recent and reliable the source is
-- For CDs, include the term in months
-- Return valid JSON only, no other text`;
+}`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+
+    console.log('AI Response:', text);
 
     // Parse JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
 import { findRatesWithAI, updateRatesWithAI, searchBankRatesWithAI } from '../services/geminiService.js';
+import { searchAndExtractRates, updateBankRatesWithSearch } from '../services/aiSearchService.js';
 
 const router = Router();
 
@@ -91,6 +92,51 @@ router.post('/ai-update', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error initiating AI update:', error);
     res.status(500).json({ error: 'Failed to initiate AI update' });
+  }
+});
+
+// AI search for specific bank (more reliable)
+router.post('/ai-search-bank', async (req: Request, res: Response) => {
+  try {
+    const { bankName, accountType } = req.body;
+    
+    if (!bankName) {
+      return res.status(400).json({ error: 'bankName is required' });
+    }
+
+    const rates = await searchAndExtractRates(bankName, accountType || 'savings');
+    
+    res.json({ 
+      message: `AI searched for ${bankName} rates`,
+      rates
+    });
+  } catch (error) {
+    console.error('Error in AI bank search:', error);
+    res.status(500).json({ error: 'Failed to search for bank rates' });
+  }
+});
+
+// Update specific bank using AI search
+router.post('/ai-update-bank', async (req: Request, res: Response) => {
+  try {
+    const { bankName } = req.body;
+    
+    if (!bankName) {
+      return res.status(400).json({ error: 'bankName is required' });
+    }
+
+    // Run in background
+    updateBankRatesWithSearch(bankName)
+      .then(count => console.log(`Updated ${count} rates for ${bankName}`))
+      .catch(err => console.error('AI bank update error:', err));
+    
+    res.json({ 
+      message: `AI update initiated for ${bankName}`,
+      status: 'processing'
+    });
+  } catch (error) {
+    console.error('Error initiating AI bank update:', error);
+    res.status(500).json({ error: 'Failed to initiate AI bank update' });
   }
 });
 
