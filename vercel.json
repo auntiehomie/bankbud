@@ -1,5 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build --workspace=client",
   "outputDirectory": "client/dist",
-  "installCommand": "npm install --workspace=client"
+  "installCommand": "npm install --workspace=client",
+  "framework": "vite",
+  "devCommand": "npm run dev --workspace=client"
 }
