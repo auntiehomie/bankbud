@@ -309,6 +309,16 @@ export default function Compare() {
                     <span className="rate-label"> APY</span>
                   </p>
                   <p className="modal-account-type">{showModal.rate?.accountType}</p>
+                  {showModal.rate?.scrapedUrl && (
+                    <a 
+                      href={showModal.rate.scrapedUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="modal-source-link"
+                    >
+                      View Official Source →
+                    </a>
+                  )}
                 </div>
 
                 <p className="modal-description">
@@ -488,6 +498,28 @@ function RateCard({
             <AlertCircle size={16} />
             <span>{rate.reports} reports</span>
           </div>
+        )}
+        {rate.scrapedUrl && (
+          <a 
+            href={rate.scrapedUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="source-link"
+            title="View source"
+          >
+            Source
+          </a>
+        )}
+        {rate.scrapedUrl && (
+          <a 
+            href={rate.scrapedUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="source-link"
+            title="View source"
+          >
+            Source
+          </a>
         )}
 
         <div className="rate-actions">
