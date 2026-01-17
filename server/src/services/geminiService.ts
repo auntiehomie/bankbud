@@ -24,9 +24,9 @@ export async function findRatesWithAI(
   accountType?: string
 ): Promise<AIFoundRate[]> {
   try {
-    // Use gemini-1.5-flash for better real-time capabilities
+    // Use gemini-pro model
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-pro',
       generationConfig: {
         temperature: 0.1, // Lower temperature for more factual responses
       }
