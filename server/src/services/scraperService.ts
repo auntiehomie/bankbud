@@ -275,16 +275,29 @@ const bankScrapers = {
   // Barclays
   async scrapeBarclays(): Promise<ScrapedRate[]> {
     try {
-      const url = 'https://www.banking.barclaysus.com/online-savings.html';
-      return [{
-        bankName: 'Barclays',
-        accountType: 'savings',
-        rate: 4.50,
-        apy: 4.65,
-        minDeposit: 0,
-        features: ['No Monthly Fee', 'Online Banking', 'Mobile Banking', 'No Minimum Balance'],
-        url
-      }];
+      const savingsUrl = 'https://www.banking.barclaysus.com/online-savings.html';
+      const cdUrl = 'https://www.banking.barclaysus.com/online-cd.html';
+      return [
+        {
+          bankName: 'Barclays Bank',
+          accountType: 'savings',
+          rate: 4.75,
+          apy: 4.85,
+          minDeposit: 0,
+          features: ['No Monthly Fee', 'Online Banking', 'Mobile Banking', 'No Minimum Balance', 'FDIC Insured'],
+          url: savingsUrl
+        },
+        {
+          bankName: 'Barclays Bank',
+          accountType: 'cd',
+          rate: 5.00,
+          apy: 5.00,
+          minDeposit: 0,
+          term: 12,
+          features: ['No Monthly Fee', 'Fixed Rate', 'FDIC Insured'],
+          url: cdUrl
+        }
+      ];
     } catch (error) {
       console.error('Error scraping Barclays:', error);
       return [];
