@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
+import { findRatesWithAI, updateRatesWithAI, searchBankRatesWithAI } from '../services/geminiService.js';
 
 const router = Router();
 
@@ -54,6 +55,42 @@ router.get('/status', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error getting scrape status:', error);
     res.status(500).json({ error: 'Failed to get scrape status' });
+  }
+});
+
+// AI-powered rate search
+router.post('/ai-search', async (req: Request, res: Response) => {
+  try {
+    const { bankName, accountType } = req.body;
+    const rates = await findRatesWithAI(bankName, accountType);
+    
+    res.json({ 
+      message: `Found ${rates.length} rates using AI`,
+      rates
+    });
+  } catch (error) {
+    console.error('Error searching rates with AI:', error);
+    res.status(500).json({ error: 'Failed to search rates with AI' });
+  }
+});
+
+// Update rates using AI
+router.post('/ai-update', async (req: Request, res: Response) => {
+  try {
+    const { bankName, accountType } = req.body;
+    
+    // Run AI update in background
+    updateRatesWithAI(bankName, accountType)
+      .then(count => console.log(`AI updated ${count} rates`))
+      .catch(err => console.error('AI update error:', err));
+    
+    res.json({ 
+      message: 'AI rate update initiated',
+      status: 'processing'
+    });
+  } catch (error) {
+    console.error('Error initiating AI update:', error);
+    res.status(500).json({ error: 'Failed to initiate AI update' });
   }
 });
 

@@ -25,8 +25,8 @@ const bankScrapers = {
       return [{
         bankName: 'Marcus by Goldman Sachs',
         accountType: 'savings',
-        rate: 4.10,
-        apy: 4.20,
+        rate: 4.40,
+        apy: 4.50,
         minDeposit: 0,
         features: ['No Monthly Fee', 'Online Banking', 'Mobile Banking', 'FDIC Insured'],
         url
@@ -45,8 +45,8 @@ const bankScrapers = {
       return [{
         bankName: 'Ally Bank',
         accountType: 'savings',
-        rate: 4.25,
-        apy: 4.35,
+        rate: 4.35,
+        apy: 4.45,
         minDeposit: 0,
         features: ['No Monthly Fee', 'Online Banking', 'ATM Fee Reimbursement'],
         url
@@ -65,8 +65,8 @@ const bankScrapers = {
       return [{
         bankName: 'Discover Bank',
         accountType: 'savings',
-        rate: 4.00,
-        apy: 4.05,
+        rate: 4.30,
+        apy: 4.40,
         minDeposit: 0,
         features: ['No Monthly Fee', 'Online Banking', 'Mobile Banking', 'No Minimum Balance', 'FDIC Insured'],
         url
@@ -84,8 +84,8 @@ const bankScrapers = {
       return [{
         bankName: 'Capital One 360',
         accountType: 'savings',
-        rate: 4.10,
-        apy: 4.25,
+        rate: 4.35,
+        apy: 4.45,
         minDeposit: 0,
         features: ['No Monthly Fee', 'Online Banking', 'Mobile Banking', 'No Minimum Balance'],
         url
@@ -260,8 +260,8 @@ const bankScrapers = {
       return [{
         bankName: 'Synchrony Bank',
         accountType: 'savings',
-        rate: 4.50,
-        apy: 4.60,
+        rate: 4.75,
+        apy: 4.85,
         minDeposit: 0,
         features: ['No Monthly Fee', 'Online Banking', 'Mobile Banking', 'No Minimum Balance', 'ATM Card', 'FDIC Insured'],
         url
