@@ -14,14 +14,13 @@ export default function Compare() {
   const [filteredRates, setFilteredRates] = useState<BankRate[]>([]);
   const [recentRates, setRecentRates] = useState<BankRate[]>([]);
   const [zipCode, setZipCode] = useState<string>('');
-  const [stateFilter] = useState<string>('');
+  // Removed unused stateFilter
   const [showModal, setShowModal] = useState<{ type: 'verify' | 'report' | null, rateId: string | null, rate: BankRate | null }>({ type: null, rateId: null, rate: null });
   const [verifyType, setVerifyType] = useState<'seen' | 'false' | null>(null);
   const [reportReason, setReportReason] = useState('');
 
-  useEffect(() => {
-    loadRates();
-  }, []);
+
+  // Only load rates after zip code is entered and user clicks search
 
   useEffect(() => {
     filterAndSortRates();
@@ -32,12 +31,8 @@ export default function Compare() {
     setLoading(true);
     setError(null);
     try {
-      const params: any = {};
-      if (accountType !== 'all') params.accountType = accountType;
-      if (zipCode) params.zipCode = zipCode;
-      if (stateFilter) params.state = stateFilter;
-      
-      const data = await api.getRates(params.accountType);
+      // Use Gemini AI to get rates based on zip code
+      const data = await api.getRatesAI(zipCode, accountType !== 'all' ? accountType : undefined);
       setRates(data);
     } catch (err) {
       setError('Failed to load rates. Please try again.');
@@ -155,6 +150,38 @@ export default function Compare() {
     setReportReason('');
   };
 
+  if (!zipCode) {
+    return (
+      <div className="compare">
+        <div className="container">
+          <div className="compare-header">
+            <h1>Compare Bank Rates</h1>
+            <p>Enter your zip code to find the best rates near you.</p>
+          </div>
+          <div className="filters">
+            <div className="filter-group location-search">
+              <label>Zip Code:</label>
+              <input
+                type="text"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                placeholder="Enter zip code"
+                maxLength={5}
+              />
+              <button 
+                className="btn-small btn-primary" 
+                onClick={loadRates}
+                disabled={!zipCode || zipCode.length !== 5}
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="loading">Loading rates...</div>;
   }
@@ -171,7 +198,7 @@ export default function Compare() {
           <p>Find the best rates verified by our community and updated automatically</p>
         </div>
 
-        <ScraperStatus />
+
 
         <BenchmarkRates />
 

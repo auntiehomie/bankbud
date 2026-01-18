@@ -4,6 +4,15 @@ import { BankRate, UserPreferences, AIRecommendation, CommunitySubmission, ChatR
 // @ts-ignore - Vite env types
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+// Get rates using Gemini AI and zip code
+async function getRatesAI(zipCode: string, accountType?: string) {
+  const response = await axios.post(`${API_BASE}/scraper/ai-search-bank`, {
+    zipCode,
+    accountType: accountType || 'savings',
+  });
+  return response.data.rates;
+}
+
 export const api = {
   // Get all rates
   getRates: async (accountType?: string) => {
@@ -11,6 +20,7 @@ export const api = {
     const response = await axios.get<BankRate[]>(`${API_BASE}/rates`, { params });
     return response.data;
   },
+  getRatesAI,
 
   // Get AI recommendations
   getRecommendations: async (preferences: UserPreferences) => {

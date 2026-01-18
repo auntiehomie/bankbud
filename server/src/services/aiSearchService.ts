@@ -15,12 +15,20 @@ interface SearchResult {
  * This uses Gemini to analyze search results
  */
 export async function searchAndExtractRates(
-  bankName: string,
-  accountType: string = 'savings'
+  bankName?: string,
+  accountType: string = 'savings',
+  zipCode?: string
 ): Promise<any[]> {
   try {
     // Step 1: Perform Google search using a simple HTTP request
-    const searchQuery = `${bankName} ${accountType} account APY rate ${new Date().getFullYear()}`;
+    let searchQuery = '';
+    if (zipCode) {
+      searchQuery = `${accountType} account APY rate near ${zipCode} ${new Date().getFullYear()}`;
+    } else if (bankName) {
+      searchQuery = `${bankName} ${accountType} account APY rate ${new Date().getFullYear()}`;
+    } else {
+      searchQuery = `${accountType} account APY rate ${new Date().getFullYear()}`;
+    }
     console.log('Searching for:', searchQuery);
 
     // Step 2: Use Gemini to search and analyze
@@ -33,7 +41,7 @@ export async function searchAndExtractRates(
 
     const prompt = `You are a financial data researcher with access to current information.
 
-TASK: Find the current ${accountType} account rate/APY for ${bankName} as of January 2026.
+TASK: Find the current ${accountType} account rate/APY for ${zipCode ? `banks near zip code ${zipCode}` : bankName ? bankName : 'all banks'} as of January 2026.
 
 SEARCH QUERY: "${searchQuery}"
 
@@ -42,12 +50,13 @@ Please search for this information and provide:
 2. Minimum deposit requirement
 3. Any notable features or requirements
 4. The official source URL
+5. The bank name
 
 If you cannot find current 2026 data, clearly state that and provide the most recent data available with the date.
 
 Respond with JSON:
 {
-  "bankName": "${bankName}",
+  "bankName": "",
   "accountType": "${accountType}",
   "apy": 0.00,
   "rate": 0.00,
@@ -58,24 +67,34 @@ Respond with JSON:
   "confidence": "high|medium|low",
   "notes": ""
 }`;
+    // Log the full prompt for debugging
+    console.log('Gemini Prompt:', prompt);
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
-    console.log('AI Search Response:', text);
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      // Log the raw AI response
+      console.log('AI Search Response:', text);
 
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*?\}(?=\s*$)/);
-    if (!jsonMatch) {
-      console.error('No JSON found in AI search response');
-      return [];
+      // Parse JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*?\}(?=\s*$)/);
+      if (!jsonMatch) {
+        console.error('No JSON found in AI search response. Full response:', text);
+        return [];
+      }
+
+      const data = JSON.parse(jsonMatch[0]);
+      return [data];
+    } catch (err) {
+      console.error('Error during Gemini AI call:', err);
+      throw err;
     }
-
-    const data = JSON.parse(jsonMatch[0]);
-    return [data];
   } catch (error) {
     console.error('Error in search and extract:', error);
+    if (error && (error as any).stack) {
+      console.error('Stack trace:', (error as any).stack);
+    }
     return [];
   }
 }

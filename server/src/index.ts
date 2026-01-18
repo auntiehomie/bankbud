@@ -14,6 +14,8 @@ import { scrapeAllBanks } from './services/scraperService.js';
 dotenv.config();
 
 const app = express();
+// Trust proxy headers (needed for correct rate limiting and client IP detection on Render)
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
 // Middleware

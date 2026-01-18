@@ -98,16 +98,14 @@ router.post('/ai-update', async (req: Request, res: Response) => {
 // AI search for specific bank (more reliable)
 router.post('/ai-search-bank', async (req: Request, res: Response) => {
   try {
-    const { bankName, accountType } = req.body;
-    
-    if (!bankName) {
-      return res.status(400).json({ error: 'bankName is required' });
+    console.log('AI search endpoint hit');
+    const { zipCode, accountType } = req.body;
+    if (!zipCode) {
+      return res.status(400).json({ error: 'zipCode is required' });
     }
-
-    const rates = await searchAndExtractRates(bankName, accountType || 'savings');
-    
+    const rates = await searchAndExtractRates(undefined, accountType || 'savings', zipCode);
     res.json({ 
-      message: `AI searched for ${bankName} rates`,
+      message: `AI searched for rates near ${zipCode}`,
       rates
     });
   } catch (error) {
