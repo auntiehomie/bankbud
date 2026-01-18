@@ -100,10 +100,13 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
   try {
     console.log('AI search endpoint hit');
     const { zipCode, accountType } = req.body;
+    console.log('Received zipCode:', zipCode, 'accountType:', accountType);
     if (!zipCode) {
+      console.error('No zipCode provided');
       return res.status(400).json({ error: 'zipCode is required' });
     }
     const rates = await searchAndExtractRates(undefined, accountType || 'savings', zipCode);
+    console.log('Rates returned from Gemini:', rates);
     res.json({ 
       message: `AI searched for rates near ${zipCode}`,
       rates

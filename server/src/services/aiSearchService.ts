@@ -29,11 +29,11 @@ export async function searchAndExtractRates(
     } else {
       searchQuery = `${accountType} account APY rate ${new Date().getFullYear()}`;
     }
-    console.log('Searching for:', searchQuery);
+    console.log('Gemini AI search - searchQuery:', searchQuery, 'bankName:', bankName, 'zipCode:', zipCode);
 
     // Step 2: Use Gemini to search and analyze
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-pro',
+      model: 'gemini-pro',
       generationConfig: {
         temperature: 0.1,
       }
@@ -71,6 +71,7 @@ Respond with JSON:
     console.log('Gemini Prompt:', prompt);
 
     try {
+      console.log('Calling Gemini generateContent...');
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -88,6 +89,9 @@ Respond with JSON:
       return [data];
     } catch (err) {
       console.error('Error during Gemini AI call:', err);
+      if (err && (err as any).stack) {
+        console.error('Gemini error stack:', (err as any).stack);
+      }
       throw err;
     }
   } catch (error) {
