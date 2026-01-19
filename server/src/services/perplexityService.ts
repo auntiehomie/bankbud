@@ -15,7 +15,7 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
 
   try {
     const response = await client.chat.completions.create({
-      model: 'llama-3.1-sonar-large-128k-online',
+      model: 'sonar',
       messages: [
         { role: 'system', content: 'You are a financial data researcher.' },
         { role: 'user', content: prompt }
