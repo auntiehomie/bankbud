@@ -1,4 +1,11 @@
+import { Router, Request, Response } from 'express';
+import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
+import { findRatesWithAI, updateRatesWithAI, searchBankRatesWithAI } from '../services/geminiService.js';
+import { searchAndExtractRates, updateBankRatesWithSearch, listAvailableGeminiModels } from '../services/aiSearchService.js';
 import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
+
+const router = Router();
+
 // Perplexity AI-powered live rate search
 router.post('/ai-search-bank-perplexity', async (req: Request, res: Response) => {
   try {
@@ -16,7 +23,7 @@ router.post('/ai-search-bank-perplexity', async (req: Request, res: Response) =>
     res.status(500).json({ error: 'Failed to search for bank rates with Perplexity' });
   }
 });
-import { listAvailableGeminiModels } from '../services/aiSearchService.js';
+
 // Endpoint to list available Gemini models for debugging
 router.get('/ai-gemini-models', async (req: Request, res: Response) => {
   try {
@@ -30,12 +37,6 @@ router.get('/ai-gemini-models', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to list Gemini models' });
   }
 });
-import { Router, Request, Response } from 'express';
-import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
-import { findRatesWithAI, updateRatesWithAI, searchBankRatesWithAI } from '../services/geminiService.js';
-import { searchAndExtractRates, updateBankRatesWithSearch } from '../services/aiSearchService.js';
-
-const router = Router();
 
 // Trigger manual scraping of all banks
 router.post('/scrape-all', async (req: Request, res: Response) => {

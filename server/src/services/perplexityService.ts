@@ -8,7 +8,7 @@ if (!PERPLEXITY_API_KEY) {
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/v1/complete';
 
-export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }) {
+export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }: { bankName?: string; accountType?: string; zipCode?: string }): Promise<any[]> {
   const prompt = `Find the current ${accountType} account APY/rate for ${bankName ? bankName : 'banks'}${zipCode ? ' near zip code ' + zipCode : ''} as of ${new Date().getFullYear()}. Provide the rate, minimum deposit, features, and the official source URL. Respond in JSON.`;
 
   try {
@@ -40,7 +40,7 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     }
     const data = JSON.parse(jsonMatch[0]);
     return [data];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error calling Perplexity API:', error?.response?.data || error);
     return [];
   }

@@ -44,7 +44,7 @@ export async function searchAndExtractRates(
 export async function listAvailableGeminiModels(): Promise<any> {
   try {
     // @ts-ignore: This is not in the official types, but is available in the API
-    if (typeof genAI.listModels !== 'function') {
+    if (typeof (genAI as any).listModels !== 'function') {
       throw new Error('listModels is not available in this version of @google/generative-ai');
     }
     const models = await (genAI as any).listModels();
