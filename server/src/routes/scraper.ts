@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
-import { findRatesWithAI, updateRatesWithAI, searchBankRatesWithAI } from '../services/geminiService.js';
-import { searchAndExtractRates, updateBankRatesWithSearch, listAvailableGeminiModels } from '../services/aiSearchService.js';
+import { updateBankRatesWithSearch, listAvailableGeminiModels } from '../services/aiSearchService.js';
+import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
 import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
 
 const router = Router();
@@ -93,18 +93,21 @@ router.get('/status', async (req: Request, res: Response) => {
 });
 
 // AI-powered rate search
+// AI-powered rate search (now uses Perplexity)
 router.post('/ai-search', async (req: Request, res: Response) => {
   try {
-    const { bankName, accountType } = req.body;
-    const rates = await findRatesWithAI(bankName, accountType);
-    
-    res.json({ 
-      message: `Found ${rates.length} rates using AI`,
+    const { bankName, zipCode, accountType } = req.body;
+    if (!bankName && !zipCode) {
+      return res.status(400).json({ error: 'bankName or zipCode is required' });
+    }
+    const rates = await searchBankRatesWithPerplexity({ bankName, accountType: accountType || 'savings', zipCode });
+    res.json({
+      message: `Perplexity AI searched for rates for ${bankName || 'banks'}${zipCode ? ' near ' + zipCode : ''}`,
       rates
     });
   } catch (error) {
-    console.error('Error searching rates with AI:', error);
-    res.status(500).json({ error: 'Failed to search rates with AI' });
+    console.error('Error in Perplexity AI bank search:', error);
+    res.status(500).json({ error: 'Failed to search for bank rates with Perplexity' });
   }
 });
 
