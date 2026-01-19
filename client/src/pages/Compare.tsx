@@ -496,6 +496,20 @@ function RateCard({
             ))}
           </div>
         )}
+        
+        {/* Show "Submit Rate" button if no rate is available */}
+        {(!rate.apy && !rate.rate) || rate.apy === 0 && (
+          <div className="no-rate-available">
+            <p>Rate information not available</p>
+            <a 
+              href="/submit" 
+              className="btn-small btn-primary"
+              style={{ marginTop: '10px' }}
+            >
+              📝 Have a rate? Submit it here
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="rate-card-footer">

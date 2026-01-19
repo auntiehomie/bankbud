@@ -1,32 +1,39 @@
 import axios from 'axios';
 
-const banks = [
-  "Flagstar Bank",
-  "Key Bank",
-  "Huntington Bank",
-  "First Merchants Bank",
-  "Michigan Schools and Government Credit Union",
-  "Lake Michigan Credit Union",
-  "Citizens Bank",
-  "Chase Bank",
-  "Bank of America",
-  "Comerica Bank",
-  "Citizens State Bank"
-];
+interface BankInfo {
+  name: string;
+  type: 'bank' | 'credit-union';
+  serviceModel: 'online' | 'branch' | 'hybrid';
+  phone: string;
+}
 
-const bankPhones: { [key: string]: string } = {
-  "Flagstar Bank": "1-800-968-7700",
-  "Key Bank": "1-800-539-2968",
-  "Huntington Bank": "1-800-480-2265",
-  "First Merchants Bank": "1-800-205-3464",
-  "Michigan Schools and Government Credit Union": "1-866-674-2848",
-  "Lake Michigan Credit Union": "1-616-242-9790",
-  "Citizens Bank": "1-800-922-9999",
-  "Chase Bank": "1-800-935-9935",
-  "Bank of America": "1-800-432-1000",
-  "Comerica Bank": "1-800-925-2160",
-  "Citizens State Bank": "1-989-723-2161"
-};
+const banks: BankInfo[] = [
+  // Michigan Branch Banks
+  { name: "Flagstar Bank", type: "bank", serviceModel: "branch", phone: "1-800-968-7700" },
+  { name: "Key Bank", type: "bank", serviceModel: "branch", phone: "1-800-539-2968" },
+  { name: "Huntington Bank", type: "bank", serviceModel: "branch", phone: "1-800-480-2265" },
+  { name: "First Merchants Bank", type: "bank", serviceModel: "branch", phone: "1-800-205-3464" },
+  { name: "Citizens State Bank", type: "bank", serviceModel: "branch", phone: "1-989-723-2161" },
+  { name: "Comerica Bank", type: "bank", serviceModel: "branch", phone: "1-800-925-2160" },
+  
+  // Michigan Credit Unions
+  { name: "Michigan Schools and Government Credit Union", type: "credit-union", serviceModel: "branch", phone: "1-866-674-2848" },
+  { name: "Lake Michigan Credit Union", type: "credit-union", serviceModel: "branch", phone: "1-616-242-9790" },
+  
+  // National Branch Banks
+  { name: "Citizens Bank", type: "bank", serviceModel: "branch", phone: "1-800-922-9999" },
+  { name: "Chase Bank", type: "bank", serviceModel: "branch", phone: "1-800-935-9935" },
+  { name: "Bank of America", type: "bank", serviceModel: "branch", phone: "1-800-432-1000" },
+  
+  // Online-Only Banks
+  { name: "American Express National Bank", type: "bank", serviceModel: "online", phone: "1-800-446-6307" },
+  { name: "Ally Bank", type: "bank", serviceModel: "online", phone: "1-877-247-2559" },
+  { name: "CIT Bank", type: "bank", serviceModel: "online", phone: "1-855-462-2652" },
+  { name: "Marcus by Goldman Sachs", type: "bank", serviceModel: "online", phone: "1-844-627-2871" },
+  { name: "Discover Bank", type: "bank", serviceModel: "online", phone: "1-800-347-7000" },
+  { name: "Capital One 360", type: "bank", serviceModel: "online", phone: "1-877-383-4802" },
+  { name: "Synchrony Bank", type: "bank", serviceModel: "online", phone: "1-866-226-5638" }
+];
 
 // Helper to get lat/lng for a zip code using OpenStreetMap Nominatim
 export async function geocodeZip(zipCode: string): Promise<{ lat: number, lon: number } | null> {
@@ -77,25 +84,40 @@ export async function getNearestBranchAddress(bankName: string, zipCode: string)
 // Batch search for rates and distances (simplified without branch search to avoid timeout)
 export async function searchRatesAndDistancesForBanks(accountType = "savings", zipCode = "") {
   const results = [];
-  for (const bankName of banks) {
+  for (const bankInfo of banks) {
     try {
-      const rate = await (await import('./perplexityService.js')).searchBankRatesWithPerplexity({ bankName, accountType, zipCode });
+      const rate = await (await import('./perplexityService.js')).searchBankRatesWithPerplexity({ bankName: bankInfo.name, accountType, zipCode });
       const rateData = rate[0] || null;
       
-      // Add phone number to the result
+      // Add bank metadata to the result
       if (rateData) {
-        rateData.phone = bankPhones[bankName] || '';
+        rateData.phone = bankInfo.phone;
+        rateData.institutionType = bankInfo.type;
+        rateData.serviceModel = bankInfo.serviceModel;
       }
       
-      results.push({ bankName, rate: rateData, branchAddress: null, distanceKm: null });
-      console.log(`Searched ${bankName}: ${rateData ? 'Found data' : 'No data found'}`);
-    } catch (err) {
-      console.error(`Error searching ${bankName}:`, err);
       results.push({ 
-        bankName, 
+        bankName: bankInfo.name, 
+        type: bankInfo.type,
+        serviceModel: bankInfo.serviceModel,
+        phone: bankInfo.phone,
+        rate: rateData, 
+        branchAddress: null, 
+        distanceKm: null 
+      });
+      console.log(`Searched ${bankInfo.name}: ${rateData ? 'Found data' : 'No data found'}`);
+    } catch (err) {
+      console.error(`Error searching ${bankInfo.name}:`, err);
+      results.push({ 
+        bankName: bankInfo.name,
+        type: bankInfo.type,
+        serviceModel: bankInfo.serviceModel,
+        phone: bankInfo.phone,
         rate: { 
-          bankName, 
-          phone: bankPhones[bankName] || '', 
+          bankName: bankInfo.name, 
+          phone: bankInfo.phone,
+          institutionType: bankInfo.type,
+          serviceModel: bankInfo.serviceModel,
           rateInfo: 'Unable to retrieve rate information. Please call for current rates.',
           apy: null 
         }, 

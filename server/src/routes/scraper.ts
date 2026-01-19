@@ -164,17 +164,24 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
           rate: r.rate.apy || r.rate.rate || 0,
           apy: r.rate.apy || r.rate.rate || 0,
           minDeposit: 0,
+          institutionType: r.type,
+          serviceModel: r.serviceModel,
           features: [
-            r.rate.rateInfo ? `Rate Info: ${r.rate.rateInfo}` : '',
-            r.rate.phone ? `Phone: ${r.rate.phone}` : '',
-            r.rate.sourceUrl ? `Source: ${r.rate.sourceUrl}` : ''
+            r.type === 'credit-union' ? '🏛️ Credit Union' : '🏦 Bank',
+            r.serviceModel === 'online' ? '💻 Online Only' : r.serviceModel === 'branch' ? '🏢 Branch Banking' : '🏢💻 Hybrid',
+            r.rate.rateRange ? `Rate Range: ${r.rate.rateRange}` : '',
+            r.rate.rateInfo ? r.rate.rateInfo.substring(0, 200) + '...' : '',
+            r.phone ? `📞 ${r.phone}` : '',
+            r.rate.sourceUrl ? `🔗 Source` : '',
+            !r.rate.apy && !r.rate.rate ? '📝 Have a rate? Submit it!' : ''
           ].filter(Boolean),
           verifications: 0,
           reports: 0,
           lastVerified: new Date().toISOString(),
-          availability: 'regional' as const,
+          availability: r.serviceModel === 'online' ? 'national' as const : 'regional' as const,
           dataSource: 'api' as const,
           scrapedUrl: r.rate.sourceUrl || '',
+          phone: r.phone,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }));
