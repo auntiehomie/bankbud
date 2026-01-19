@@ -45,7 +45,7 @@ export async function getNearestBranchAddress(bankName: string, zipCode: string)
   // (In production, use Google Places or similar for reliability)
   const prompt = `What is the address of the nearest ${bankName} branch to zip code ${zipCode} in the USA? Just give the address.`;
   try {
-    const { searchBankRatesWithPerplexity } = await import('./perplexityService');
+    const { searchBankRatesWithPerplexity } = await import('./perplexityService.js');
     const result = await searchBankRatesWithPerplexity({ bankName, accountType: "branch", zipCode });
     if (result && result[0] && typeof result[0] === 'string') {
       return result[0];
@@ -62,7 +62,7 @@ export async function searchRatesAndDistancesForBanks(accountType = "savings", z
   const userLoc = await geocodeZip(zipCode);
   const results = [];
   for (const bankName of banks) {
-    const rate = await (await import('./perplexityService')).searchBankRatesWithPerplexity({ bankName, accountType, zipCode });
+    const rate = await (await import('./perplexityService.js')).searchBankRatesWithPerplexity({ bankName, accountType, zipCode });
     let branchAddress = await getNearestBranchAddress(bankName, zipCode);
     let branchLoc = null;
     let distanceKm = null;
