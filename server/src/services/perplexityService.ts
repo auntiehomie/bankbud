@@ -1,4 +1,4 @@
-import axios from 'axios';
+import Perplexity from '@perplexity-ai/perplexity_ai';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
@@ -6,32 +6,27 @@ if (!PERPLEXITY_API_KEY) {
   throw new Error('PERPLEXITY_API_KEY is not set in environment variables');
 }
 
-const PERPLEXITY_API_URL = 'https://api.perplexity.ai/v1/complete';
+const client = new Perplexity({
+  apiKey: PERPLEXITY_API_KEY
+});
 
 export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }: { bankName?: string; accountType?: string; zipCode?: string }): Promise<any[]> {
   const prompt = `Find the current ${accountType} account APY/rate for ${bankName ? bankName : 'banks'}${zipCode ? ' near zip code ' + zipCode : ''} as of ${new Date().getFullYear()}. Provide the rate, minimum deposit, features, and the official source URL. Respond in JSON.`;
 
   try {
-    const response = await axios.post(
-      PERPLEXITY_API_URL,
-      {
-        model: 'pplx-70b-online',
-        messages: [
-          { role: 'system', content: 'You are a financial data researcher.' },
-          { role: 'user', content: prompt }
-        ],
-        stream: false
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    const result = response.data;
-    // Perplexity returns the answer in result.choices[0].message.content
-    const text = result.choices?.[0]?.message?.content || '';
+    const response = await client.chat.completions.create({
+      model: 'pplx-70b-online',
+      messages: [
+        { role: 'system', content: 'You are a financial data researcher.' },
+        { role: 'user', content: prompt }
+      ],
+      stream: false
+    });
+    
+    // Perplexity SDK returns the answer in response.choices[0].message.content
+    const content = response.choices?.[0]?.message?.content;
+    const text = typeof content === 'string' ? content : '';
+    
     // Try to extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -41,7 +36,7 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     const data = JSON.parse(jsonMatch[0]);
     return [data];
   } catch (error: any) {
-    console.error('Error calling Perplexity API:', error?.response?.data || error);
+    console.error('Error calling Perplexity API:', error?.message || error);
     return [];
   }
 }

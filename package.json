@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@perplexity-ai/perplexity_ai": "^0.18.4"
   }
 }
