@@ -10,6 +10,8 @@ interface SearchResult {
   snippet: string;
 }
 
+// ...existing code...
+
 /**
  * Search Google for bank rates and extract with AI
  * This uses Gemini to analyze search results
@@ -38,23 +40,6 @@ export async function searchAndExtractRates(
         temperature: 0.1,
       }
     });
-/**
- * List available Gemini models for debugging
- */
-export async function listAvailableGeminiModels(): Promise<any> {
-  try {
-    // @ts-ignore: This is not in the official types, but is available in the API
-    if (typeof (genAI as any).listModels !== 'function') {
-      throw new Error('listModels is not available in this version of @google/generative-ai');
-    }
-    const models = await (genAI as any).listModels();
-    console.log('Available Gemini models:', models);
-    return models;
-  } catch (error) {
-    console.error('Error listing Gemini models:', error);
-    return null;
-  }
-}
 
     const prompt = `You are a financial data researcher with access to current information.
 
@@ -101,9 +86,13 @@ Respond with JSON:
         console.error('No JSON found in AI search response. Full response:', text);
         return [];
       }
-
-      const data = JSON.parse(jsonMatch[0]);
-      return [data];
+      try {
+        const data = JSON.parse(jsonMatch[0]);
+        return [data];
+      } catch (jsonErr) {
+        console.error('Failed to parse JSON from AI response:', jsonErr, text);
+        return [];
+      }
     } catch (err) {
       console.error('Error during Gemini AI call:', err);
       if (err && (err as any).stack) {
@@ -112,13 +101,32 @@ Respond with JSON:
       throw err;
     }
   } catch (error) {
-    console.error('Error in search and extract:', error);
-    if (error && (error as any).stack) {
-      console.error('Stack trace:', (error as any).stack);
-    }
+    console.error('Error in searchAndExtractRates:', error);
     return [];
   }
 }
+
+// ...existing code...
+
+/**
+ * List available Gemini models for debugging
+ */
+export async function listAvailableGeminiModels(): Promise<any> {
+  try {
+    // @ts-ignore: This is not in the official types, but is available in the API
+    if (typeof (genAI as any).listModels !== 'function') {
+      throw new Error('listModels is not available in this version of @google/generative-ai');
+    }
+    const models = await (genAI as any).listModels();
+    console.log('Available Gemini models:', models);
+    return models;
+  } catch (error) {
+    console.error('Error listing Gemini models:', error);
+    return null;
+  }
+}
+
+// ...existing code...
 
 /**
  * Update a specific bank's rates using AI search
