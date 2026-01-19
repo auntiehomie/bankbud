@@ -1,3 +1,4 @@
+import { searchRatesAndDistancesForBanks } from '../services/bankBatchService.js';
 import { Router, Request, Response } from 'express';
 import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
 import { updateBankRatesWithSearch, listAvailableGeminiModels, searchAndExtractRates } from '../services/aiSearchService.js';
@@ -5,6 +6,18 @@ import { updateBankRatesWithSearch, listAvailableGeminiModels, searchAndExtractR
 import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
 
 const router = Router();
+
+// Batch AI-powered rate and distance search for core banks
+router.post('/ai-search-banks', async (req: Request, res: Response) => {
+  try {
+    const { accountType, zipCode } = req.body;
+    const results = await searchRatesAndDistancesForBanks(accountType || 'savings', zipCode || '48304');
+    res.json({ results });
+  } catch (error) {
+    console.error('Error in batch AI bank search:', error);
+    res.status(500).json({ error: 'Failed to search rates and distances for banks' });
+  }
+});
 
 // Perplexity AI-powered live rate search
 router.post('/ai-search-bank-perplexity', async (req: Request, res: Response) => {
