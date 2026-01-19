@@ -153,9 +153,35 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
     if (!zipCode) {
       console.log('No zipCode provided, using batch search for core banks');
       const results = await searchRatesAndDistancesForBanks(accountType || 'savings', '');
+      
+      // Format results to match BankRate interface expected by frontend
+      const formattedRates = results
+        .filter(r => r.rate)
+        .map((r, index) => ({
+          _id: `ai-${index}-${Date.now()}`,
+          bankName: r.bankName,
+          accountType: accountType || 'savings',
+          rate: r.rate.apy || r.rate.rate || 0,
+          apy: r.rate.apy || r.rate.rate || 0,
+          minDeposit: 0,
+          features: [
+            r.rate.rateInfo ? `Rate Info: ${r.rate.rateInfo}` : '',
+            r.rate.phone ? `Phone: ${r.rate.phone}` : '',
+            r.rate.sourceUrl ? `Source: ${r.rate.sourceUrl}` : ''
+          ].filter(Boolean),
+          verifications: 0,
+          reports: 0,
+          lastVerified: new Date().toISOString(),
+          availability: 'regional' as const,
+          dataSource: 'api' as const,
+          scrapedUrl: r.rate.sourceUrl || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }));
+      
       return res.json({ 
         message: `Perplexity AI searched for rates from core banks`,
-        rates: results.map(r => r.rate).filter(Boolean)
+        rates: formattedRates
       });
     }
     
