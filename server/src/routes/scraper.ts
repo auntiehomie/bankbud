@@ -148,10 +148,17 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
     console.log('AI search endpoint hit');
     const { zipCode, accountType } = req.body;
     console.log('Received zipCode:', zipCode, 'accountType:', accountType);
+    
+    // Use batch search for core banks when no zipCode is provided
     if (!zipCode) {
-      console.error('No zipCode provided');
-      return res.status(400).json({ error: 'zipCode is required' });
+      console.log('No zipCode provided, using batch search for core banks');
+      const results = await searchRatesAndDistancesForBanks(accountType || 'savings', '');
+      return res.json({ 
+        message: `Perplexity AI searched for rates from core banks`,
+        rates: results.map(r => r.rate).filter(Boolean)
+      });
     }
+    
     const rates = await searchBankRatesWithPerplexity({ bankName: undefined, accountType: accountType || 'savings', zipCode });
     console.log('Rates returned from Perplexity:', rates);
     res.json({ 
