@@ -27,14 +27,45 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     const content = response.choices?.[0]?.message?.content;
     const text = typeof content === 'string' ? content : '';
     
-    // Try to extract JSON from the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('No JSON found in Perplexity response:', text);
+    if (!text) {
+      console.error('No response from Perplexity');
       return [];
     }
-    const data = JSON.parse(jsonMatch[0]);
-    return [data];
+    
+    // Parse the text response to extract rate information
+    const rateData: any = {
+      bankName: bankName,
+      accountType: accountType,
+      sourceUrl: '',
+      rateInfo: text.substring(0, 500), // Store first 500 chars for display
+      apy: null,
+      rate: null
+    };
+    
+    // Try to extract APY/rate from text using regex
+    const apyMatch = text.match(/(\d+\.?\d*)\s*%?\s*(?:APY|apy)/i);
+    const rateRangeMatch = text.match(/(\d+\.?\d*)\s*%?\s*-\s*(\d+\.?\d*)\s*%?\s*(?:APY|apy)/i);
+    
+    if (rateRangeMatch) {
+      // Found a range like "3.20%-3.82% APY"
+      rateData.apy = parseFloat(rateRangeMatch[2]); // Use the higher end
+      rateData.rate = parseFloat(rateRangeMatch[2]);
+      rateData.rateRange = `${rateRangeMatch[1]}%-${rateRangeMatch[2]}%`;
+    } else if (apyMatch) {
+      // Found a single rate like "3.50% APY"
+      rateData.apy = parseFloat(apyMatch[1]);
+      rateData.rate = parseFloat(apyMatch[1]);
+    }
+    
+    // Extract URL
+    const urlMatch = text.match(/https?:\/\/[^\s\]]+/);
+    if (urlMatch) {
+      rateData.sourceUrl = urlMatch[0];
+    }
+    
+    console.log(`Parsed ${bankName}: APY=${rateData.apy || 'N/A'}, URL=${rateData.sourceUrl || 'N/A'}`);
+    
+    return [rateData];
   } catch (error: any) {
     console.error('Error calling Perplexity API:', error?.message || error);
     return [];

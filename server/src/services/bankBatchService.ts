@@ -14,6 +14,20 @@ const banks = [
   "Citizens State Bank"
 ];
 
+const bankPhones: { [key: string]: string } = {
+  "Flagstar Bank": "1-800-968-7700",
+  "Key Bank": "1-800-539-2968",
+  "Huntington Bank": "1-800-480-2265",
+  "First Merchants Bank": "1-800-205-3464",
+  "Michigan Schools and Government Credit Union": "1-866-674-2848",
+  "Lake Michigan Credit Union": "1-616-242-9790",
+  "Citizens Bank": "1-800-922-9999",
+  "Chase Bank": "1-800-935-9935",
+  "Bank of America": "1-800-432-1000",
+  "Comerica Bank": "1-800-925-2160",
+  "Citizens State Bank": "1-989-723-2161"
+};
+
 // Helper to get lat/lng for a zip code using OpenStreetMap Nominatim
 export async function geocodeZip(zipCode: string): Promise<{ lat: number, lon: number } | null> {
   try {
@@ -66,11 +80,28 @@ export async function searchRatesAndDistancesForBanks(accountType = "savings", z
   for (const bankName of banks) {
     try {
       const rate = await (await import('./perplexityService.js')).searchBankRatesWithPerplexity({ bankName, accountType, zipCode });
-      results.push({ bankName, rate: rate[0] || null, branchAddress: null, distanceKm: null });
-      console.log(`Searched ${bankName}: ${rate[0] ? 'Found rate' : 'No rate found'}`);
+      const rateData = rate[0] || null;
+      
+      // Add phone number to the result
+      if (rateData) {
+        rateData.phone = bankPhones[bankName] || '';
+      }
+      
+      results.push({ bankName, rate: rateData, branchAddress: null, distanceKm: null });
+      console.log(`Searched ${bankName}: ${rateData ? 'Found data' : 'No data found'}`);
     } catch (err) {
       console.error(`Error searching ${bankName}:`, err);
-      results.push({ bankName, rate: null, branchAddress: null, distanceKm: null });
+      results.push({ 
+        bankName, 
+        rate: { 
+          bankName, 
+          phone: bankPhones[bankName] || '', 
+          rateInfo: 'Unable to retrieve rate information. Please call for current rates.',
+          apy: null 
+        }, 
+        branchAddress: null, 
+        distanceKm: null 
+      });
     }
     await new Promise(res => setTimeout(res, 500)); // reduce delay to 500ms
   }
