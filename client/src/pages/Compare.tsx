@@ -16,10 +16,14 @@ export default function Compare() {
   const [showModal, setShowModal] = useState<{ type: 'verify' | 'report' | null, rateId: string | null, rate: BankRate | null }>({ type: null, rateId: null, rate: null });
   const [verifyType, setVerifyType] = useState<'seen' | 'false' | null>(null);
   const [reportReason, setReportReason] = useState('');
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Load rates on initial mount
+  const CACHE_KEY = 'bankbud_rates_cache';
+  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+  // Load rates on initial mount with caching
   useEffect(() => {
-    loadRates();
+    loadRatesWithCache();
   }, []);
 
   useEffect(() => {
@@ -27,16 +31,62 @@ export default function Compare() {
     getRecentSubmissions();
   }, [rates, accountType, sortBy]);
 
+  const loadRatesWithCache = async () => {
+    // Check for cached data first
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        
+        // If cache is less than 24 hours old, use it
+        if (age < CACHE_DURATION) {
+          console.log('Using cached rates, age:', Math.round(age / (60 * 1000)), 'minutes');
+          setRates(data);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Error reading cache:', err);
+      }
+    }
+    
+    // If no valid cache, fetch fresh data
+    await loadRates();
+  };
+
   const loadRates = async () => {
     setLoading(true);
     setError(null);
+    setLoadingProgress(0);
+    
+    // Simulate progress for better UX
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 500);
+    
     try {
       const data = await api.getRatesAI(zipCode, accountType !== 'all' ? accountType : undefined);
       setRates(data);
+      
+      // Cache the data
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+      
+      setLoadingProgress(100);
     } catch (err) {
       setError('Failed to load rates. Please try again.');
     } finally {
-      setLoading(false);
+      clearInterval(progressInterval);
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+      }, 300);
     }
   };
 
@@ -150,7 +200,21 @@ export default function Compare() {
   };
 
   if (loading) {
-    return <div className="loading">Loading rates...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-content">
+          <h2>Loading Rates...</h2>
+          <p>Searching {18} banks and credit unions for the best rates</p>
+          <div className="progress-bar-container">
+            <div 
+              className="progress-bar-fill" 
+              style={{ width: `${loadingProgress}%` }}
+            />
+          </div>
+          <p className="loading-percentage">{Math.round(loadingProgress)}%</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -162,7 +226,16 @@ export default function Compare() {
       <div className="container">
         <div className="compare-header">
           <h1>Compare Bank Rates</h1>
-          <p>Live rates from top Michigan banks, updated automatically</p>
+          <p>Live rates from top Michigan banks and online banks</p>
+          {rates.length > 0 && (
+            <button 
+              className="btn-small btn-outline" 
+              onClick={loadRates}
+              style={{ marginTop: '1rem' }}
+            >
+              🔄 Refresh Rates
+            </button>
+          )}
         </div>
 
         <div className="filters">
