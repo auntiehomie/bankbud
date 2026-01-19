@@ -116,7 +116,7 @@ router.post('/ai-update', async (req: Request, res: Response) => {
   try {
     const { bankName, accountType } = req.body;
     // Run AI update in background
-    searchAndExtractRates(bankName, accountType)
+    updateBankRatesWithSearch(bankName)
       .then((count: number) => console.log(`AI updated ${count} rates`))
       .catch((err: any) => console.error('AI update error:', err));
     res.json({ 
