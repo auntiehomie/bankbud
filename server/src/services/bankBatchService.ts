@@ -1,14 +1,17 @@
 import axios from 'axios';
 
 const banks = [
-  "Key Bank",
-  "Fifth Third Bank",
-  "Michigan Schools and Government Credit Union",
   "Flagstar Bank",
+  "Key Bank",
   "Huntington Bank",
   "First Merchants Bank",
+  "Michigan Schools and Government Credit Union",
+  "Lake Michigan Credit Union",
   "Citizens Bank",
-  "Comerica Bank"
+  "Chase Bank",
+  "Bank of America",
+  "Comerica Bank",
+  "Citizens State Bank"
 ];
 
 // Helper to get lat/lng for a zip code using OpenStreetMap Nominatim
@@ -57,31 +60,19 @@ export async function getNearestBranchAddress(bankName: string, zipCode: string)
   }
 }
 
-// Batch search for rates and distances
-export async function searchRatesAndDistancesForBanks(accountType = "savings", zipCode = "48304") {
-  const userLoc = await geocodeZip(zipCode);
+// Batch search for rates and distances (simplified without branch search to avoid timeout)
+export async function searchRatesAndDistancesForBanks(accountType = "savings", zipCode = "") {
   const results = [];
   for (const bankName of banks) {
-    const rate = await (await import('./perplexityService.js')).searchBankRatesWithPerplexity({ bankName, accountType, zipCode });
-    let branchAddress = await getNearestBranchAddress(bankName, zipCode);
-    let branchLoc = null;
-    let distanceKm = null;
-    if (branchAddress) {
-      // Geocode the branch address
-      try {
-        const geo = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(branchAddress)}&country=USA&format=json&limit=1`, { headers: { 'User-Agent': 'bankbud/1.0' } });
-        if (geo.data && geo.data.length > 0) {
-          branchLoc = { lat: parseFloat(geo.data[0].lat), lon: parseFloat(geo.data[0].lon) };
-        }
-      } catch (err) {
-        console.error('Branch geocoding error:', err);
-      }
+    try {
+      const rate = await (await import('./perplexityService.js')).searchBankRatesWithPerplexity({ bankName, accountType, zipCode });
+      results.push({ bankName, rate: rate[0] || null, branchAddress: null, distanceKm: null });
+      console.log(`Searched ${bankName}: ${rate[0] ? 'Found rate' : 'No rate found'}`);
+    } catch (err) {
+      console.error(`Error searching ${bankName}:`, err);
+      results.push({ bankName, rate: null, branchAddress: null, distanceKm: null });
     }
-    if (userLoc && branchLoc) {
-      distanceKm = haversineDistance(userLoc.lat, userLoc.lon, branchLoc.lat, branchLoc.lon);
-    }
-    results.push({ bankName, rate: rate[0] || null, branchAddress, distanceKm });
-    await new Promise(res => setTimeout(res, 1000)); // avoid rate limits
+    await new Promise(res => setTimeout(res, 500)); // reduce delay to 500ms
   }
   return results;
 }

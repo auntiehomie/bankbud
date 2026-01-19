@@ -11,7 +11,7 @@ const client = new Perplexity({
 });
 
 export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }: { bankName?: string; accountType?: string; zipCode?: string }): Promise<any[]> {
-  const prompt = `Find the current ${accountType} account APY/rate for ${bankName ? bankName : 'banks'}${zipCode ? ' near zip code ' + zipCode : ''} as of ${new Date().getFullYear()}. Provide the rate, minimum deposit, features, and the official source URL. Respond in JSON.`;
+  const prompt = `Search ${bankName}'s official website for their current ${accountType} account APY/interest rate as of ${new Date().getFullYear()}. What is the APY rate, minimum deposit, and any special features? Provide the exact rate number and the official website URL where you found it.`;
 
   try {
     const response = await client.chat.completions.create({
