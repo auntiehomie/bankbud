@@ -33,11 +33,28 @@ export async function searchAndExtractRates(
 
     // Step 2: Use Gemini to search and analyze
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-pro',
+      model: 'models/gemini-pro',
       generationConfig: {
         temperature: 0.1,
       }
     });
+/**
+ * List available Gemini models for debugging
+ */
+export async function listAvailableGeminiModels(): Promise<any> {
+  try {
+    // @ts-ignore: This is not in the official types, but is available in the API
+    if (typeof genAI.listModels !== 'function') {
+      throw new Error('listModels is not available in this version of @google/generative-ai');
+    }
+    const models = await (genAI as any).listModels();
+    console.log('Available Gemini models:', models);
+    return models;
+  } catch (error) {
+    console.error('Error listing Gemini models:', error);
+    return null;
+  }
+}
 
     const prompt = `You are a financial data researcher with access to current information.
 

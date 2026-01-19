@@ -1,3 +1,35 @@
+import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
+// Perplexity AI-powered live rate search
+router.post('/ai-search-bank-perplexity', async (req: Request, res: Response) => {
+  try {
+    const { bankName, zipCode, accountType } = req.body;
+    if (!bankName && !zipCode) {
+      return res.status(400).json({ error: 'bankName or zipCode is required' });
+    }
+    const rates = await searchBankRatesWithPerplexity({ bankName, accountType: accountType || 'savings', zipCode });
+    res.json({
+      message: `Perplexity AI searched for rates for ${bankName || 'banks'}${zipCode ? ' near ' + zipCode : ''}`,
+      rates
+    });
+  } catch (error) {
+    console.error('Error in Perplexity AI bank search:', error);
+    res.status(500).json({ error: 'Failed to search for bank rates with Perplexity' });
+  }
+});
+import { listAvailableGeminiModels } from '../services/aiSearchService.js';
+// Endpoint to list available Gemini models for debugging
+router.get('/ai-gemini-models', async (req: Request, res: Response) => {
+  try {
+    const models = await listAvailableGeminiModels();
+    if (!models) {
+      return res.status(500).json({ error: 'Could not list Gemini models. Check server logs for details.' });
+    }
+    res.json({ models });
+  } catch (error) {
+    console.error('Error listing Gemini models:', error);
+    res.status(500).json({ error: 'Failed to list Gemini models' });
+  }
+});
 import { Router, Request, Response } from 'express';
 import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
 import { findRatesWithAI, updateRatesWithAI, searchBankRatesWithAI } from '../services/geminiService.js';
