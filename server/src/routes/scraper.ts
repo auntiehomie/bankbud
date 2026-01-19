@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
-import { updateBankRatesWithSearch, listAvailableGeminiModels } from '../services/aiSearchService.js';
-import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
+import { updateBankRatesWithSearch, listAvailableGeminiModels, searchAndExtractRates } from '../services/aiSearchService.js';
+// ...existing code...
 import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
 
 const router = Router();
@@ -111,16 +111,14 @@ router.post('/ai-search', async (req: Request, res: Response) => {
   }
 });
 
-// Update rates using AI
+// Update rates using AI (uses searchAndExtractRates)
 router.post('/ai-update', async (req: Request, res: Response) => {
   try {
     const { bankName, accountType } = req.body;
-    
     // Run AI update in background
-    updateRatesWithAI(bankName, accountType)
-      .then(count => console.log(`AI updated ${count} rates`))
-      .catch(err => console.error('AI update error:', err));
-    
+    searchAndExtractRates(bankName, accountType)
+      .then((count: number) => console.log(`AI updated ${count} rates`))
+      .catch((err: any) => console.error('AI update error:', err));
     res.json({ 
       message: 'AI rate update initiated',
       status: 'processing'
