@@ -139,10 +139,10 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
       console.error('No zipCode provided');
       return res.status(400).json({ error: 'zipCode is required' });
     }
-    const rates = await searchAndExtractRates(undefined, accountType || 'savings', zipCode);
-    console.log('Rates returned from Gemini:', rates);
+    const rates = await searchBankRatesWithPerplexity({ bankName: undefined, accountType: accountType || 'savings', zipCode });
+    console.log('Rates returned from Perplexity:', rates);
     res.json({ 
-      message: `AI searched for rates near ${zipCode}`,
+      message: `Perplexity AI searched for rates near ${zipCode}`,
       rates
     });
   } catch (error) {
