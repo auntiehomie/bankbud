@@ -3,7 +3,6 @@ import { Filter, TrendingUp, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { api } from '../utils/api';
 import { BankRate } from '../types';
 import { useStore } from '../store';
-import ScraperStatus from '../components/ScraperStatus';
 import BenchmarkRates from '../components/BenchmarkRates';
 import './Compare.css';
 
@@ -14,13 +13,14 @@ export default function Compare() {
   const [filteredRates, setFilteredRates] = useState<BankRate[]>([]);
   const [recentRates, setRecentRates] = useState<BankRate[]>([]);
   const [zipCode, setZipCode] = useState<string>('');
-  // Removed unused stateFilter
   const [showModal, setShowModal] = useState<{ type: 'verify' | 'report' | null, rateId: string | null, rate: BankRate | null }>({ type: null, rateId: null, rate: null });
   const [verifyType, setVerifyType] = useState<'seen' | 'false' | null>(null);
   const [reportReason, setReportReason] = useState('');
 
-
-  // Only load rates after zip code is entered and user clicks search
+  // Load rates on initial mount
+  useEffect(() => {
+    loadRates();
+  }, []);
 
   useEffect(() => {
     filterAndSortRates();
@@ -31,7 +31,6 @@ export default function Compare() {
     setLoading(true);
     setError(null);
     try {
-      // Use Gemini AI to get rates based on zip code
       const data = await api.getRatesAI(zipCode, accountType !== 'all' ? accountType : undefined);
       setRates(data);
     } catch (err) {
@@ -150,38 +149,6 @@ export default function Compare() {
     setReportReason('');
   };
 
-  if (!zipCode) {
-    return (
-      <div className="compare">
-        <div className="container">
-          <div className="compare-header">
-            <h1>Compare Bank Rates</h1>
-            <p>Enter your zip code to find the best rates near you.</p>
-          </div>
-          <div className="filters">
-            <div className="filter-group location-search">
-              <label>Zip Code:</label>
-              <input
-                type="text"
-                value={zipCode}
-                onChange={(e) => setZipCode(e.target.value)}
-                placeholder="Enter zip code"
-                maxLength={5}
-              />
-              <button 
-                className="btn-small btn-primary" 
-                onClick={loadRates}
-                disabled={!zipCode || zipCode.length !== 5}
-              >
-                Search
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (loading) {
     return <div className="loading">Loading rates...</div>;
   }
@@ -195,32 +162,8 @@ export default function Compare() {
       <div className="container">
         <div className="compare-header">
           <h1>Compare Bank Rates</h1>
-          <p>Find the best rates verified by our community and updated automatically</p>
+          <p>Live rates from top Michigan banks, updated automatically</p>
         </div>
-
-
-
-        <BenchmarkRates />
-
-        {recentRates.length > 0 && (
-          <div className="recent-submissions">
-            <div className="recent-header">
-              <CheckCircle size={20} />
-              <h2>Recently Submitted by Community</h2>
-              <span className="recent-count">{recentRates.length} new</span>
-            </div>
-            <div className="recent-rates">
-              {recentRates.map((rate) => (
-                <RateCard 
-                  key={rate._id} 
-                  rate={rate} 
-                  onVerify={handleVerify}
-                  onReport={handleReport}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="filters">
           <div className="filter-group">
@@ -245,7 +188,7 @@ export default function Compare() {
           </div>
 
           <div className="filter-group location-search">
-            <label>Zip Code:</label>
+            <label>Zip Code (optional):</label>
             <input
               type="text"
               value={zipCode}
@@ -256,7 +199,7 @@ export default function Compare() {
             <button 
               className="btn-small btn-primary" 
               onClick={loadRates}
-              disabled={!zipCode || zipCode.length !== 5}
+              disabled={zipCode.length > 0 && zipCode.length !== 5}
             >
               Search
             </button>
@@ -270,6 +213,28 @@ export default function Compare() {
             )}
           </div>
         </div>
+
+        <BenchmarkRates />
+
+        {recentRates.length > 0 && (
+          <div className="recent-submissions">
+            <div className="recent-header">
+              <CheckCircle size={20} />
+              <h2>Recently Submitted by Community</h2>
+              <span className="recent-count">{recentRates.length} new</span>
+            </div>
+            <div className="recent-rates">
+              {recentRates.map((rate) => (
+                <RateCard 
+                  key={rate._id} 
+                  rate={rate} 
+                  onVerify={handleVerify}
+                  onReport={handleReport}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="rates-table">
           {filteredRates.length === 0 ? (

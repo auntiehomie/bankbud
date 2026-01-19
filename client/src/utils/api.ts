@@ -5,9 +5,9 @@ import { BankRate, UserPreferences, AIRecommendation, CommunitySubmission, ChatR
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Get rates using Gemini AI and zip code
-async function getRatesAI(zipCode: string, accountType?: string) {
+async function getRatesAI(zipCode?: string, accountType?: string) {
   const response = await axios.post(`${API_BASE}/scraper/ai-search-bank`, {
-    zipCode,
+    zipCode: zipCode || '',
     accountType: accountType || 'savings',
   });
   return response.data.rates;
