@@ -9,6 +9,7 @@ import recommendationsRouter from './routes/recommendations.js';
 import scraperRouter from './routes/scraper.js';
 import benchmarksRouter from './routes/benchmarks.js';
 import chatRouter from './routes/chat.js';
+import newsRouter from './routes/news.js';
 import { scrapeAllBanks } from './services/scraperService.js';
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/scraper', scraperRouter);
 app.use('/api/benchmarks', benchmarksRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/news', newsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

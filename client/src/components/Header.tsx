@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Building2, TrendingUp, Send, Sparkles, MessageCircle } from 'lucide-react';
+import { Building2, TrendingUp, Send, Sparkles, MessageCircle, Newspaper } from 'lucide-react';
 import './Header.css';
 
 export default function Header() {
@@ -19,6 +19,10 @@ export default function Header() {
           <Link to="/ai-advisor" className="nav-link">
             <MessageCircle size={20} />
             <span>AI Advisor</span>
+          </Link>
+          <Link to="/news" className="nav-link">
+            <Newspaper size={20} />
+            <span>News</span>
           </Link>
           <Link to="/recommendations" className="nav-link">
             <Sparkles size={20} />

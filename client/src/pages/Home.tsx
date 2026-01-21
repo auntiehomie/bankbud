@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Users, ArrowRight, MessageCircle } from 'lucide-react';
+import { TrendingUp, Users, ArrowRight, MessageCircle, Newspaper } from 'lucide-react';
 import { api } from '../utils/api';
 import { BankRate } from '../types';
 import './Home.css';
@@ -8,9 +8,11 @@ import './Home.css';
 export default function Home() {
   const [topRates, setTopRates] = useState<Record<string, BankRate[]>>({});
   const [loading, setLoading] = useState(true);
+  const [newsPreview, setNewsPreview] = useState<any[]>([]);
 
   useEffect(() => {
     loadTopRates();
+    loadNewsPreview();
   }, []);
 
   const loadTopRates = async () => {
@@ -26,6 +28,15 @@ export default function Home() {
       console.error('Failed to load rates:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadNewsPreview = async () => {
+    try {
+      const news = await api.getNews(3); // Get 3 latest articles for preview
+      setNewsPreview(news);
+    } catch (error) {
+      console.error('Failed to load news preview:', error);
     }
   };
 
@@ -86,6 +97,40 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {newsPreview.length > 0 && (
+        <section className="news-preview">
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <h2>Latest Banking News</h2>
+                <p>Stay informed with the latest updates</p>
+              </div>
+              <Link to="/news" className="btn btn-outline">
+                View All News →
+              </Link>
+            </div>
+            
+            <div className="news-preview-grid">
+              {newsPreview.map((article, index) => (
+                <div key={index} className="news-preview-card">
+                  <div className="news-preview-category">{article.category.replace('-', ' ')}</div>
+                  <h4>{article.title}</h4>
+                  <p>{article.summary.substring(0, 120)}...</p>
+                  <div className="news-preview-footer">
+                    <span>{article.source}</span>
+                    {article.url && article.url !== '#' && (
+                      <a href={article.url} target="_blank" rel="noopener noreferrer">
+                        Read More →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="cta-section">
         <div className="container">

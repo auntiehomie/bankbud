@@ -5,6 +5,7 @@ import Compare from './pages/Compare';
 import Submit from './pages/Submit';
 import Recommendations from './pages/Recommendations';
 import AIAdvisor from './pages/AIAdvisor';
+import News from './pages/News';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/submit" element={<Submit />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/ai-advisor" element={<AIAdvisor />} />
+          <Route path="/news" element={<News />} />
         </Routes>
       </main>
     </div>

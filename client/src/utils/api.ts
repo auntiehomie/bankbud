@@ -85,5 +85,13 @@ export const api = {
   getAIStatus: async () => {
     const response = await axios.get<{ available: boolean; message: string }>(`${API_BASE}/chat/status`);
     return response.data;
+  },
+
+  // Get banking news
+  getNews: async (limit: number = 6) => {
+    const response = await axios.get(`${API_BASE}/news`, {
+      params: { limit }
+    });
+    return response.data;
   }
 };
