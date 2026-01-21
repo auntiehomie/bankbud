@@ -106,7 +106,38 @@ function RateSection({ title, rates, type }: { title: string; rates: BankRate[];
       <h3>{title}</h3>
       {rates && rates.length > 0 ? (
         <div className="rate-list">
-          {rates.map((rate) => (\n            <div key={rate._id} className=\"rate-item\">\n              <div className=\"rate-bank\">{rate.bankName}</div>\n              <div className=\"rate-value\">{rate.apy || rate.rate}% APY</div>\n              <div className=\"rate-info-row\">\n                {rate.scrapedUrl ? (\n                  <a \n                    href={rate.scrapedUrl} \n                    target=\"_blank\" \n                    rel=\"noopener noreferrer\"\n                    className=\"rate-verified-link\"\n                    title=\"View source and verifications\"\n                  >\n                    \u2713 {rate.verifications} verifications\n                  </a>\n                ) : (\n                  <div className=\"rate-verified\">\n                    \u2713 {rate.verifications} verifications\n                  </div>\n                )}\n                {rate.phone && (\n                  <a \n                    href={`tel:${rate.phone}`} \n                    className=\"rate-phone-link\"\n                    title=\"Call to verify rate\"\n                  >\n                    \ud83d\udcde Verify\n                  </a>\n                )}\n              </div>\n            </div>\n          ))}
+          {rates.map((rate) => (
+            <div key={rate._id} className="rate-item">
+              <div className="rate-bank">{rate.bankName}</div>
+              <div className="rate-value">{rate.apy || rate.rate}% APY</div>
+              <div className="rate-info-row">
+                {rate.scrapedUrl ? (
+                  <a 
+                    href={rate.scrapedUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="rate-verified-link"
+                    title="View source and verifications"
+                  >
+                    ✓ {rate.verifications} verifications
+                  </a>
+                ) : (
+                  <div className="rate-verified">
+                    ✓ {rate.verifications} verifications
+                  </div>
+                )}
+                {rate.phone && (
+                  <a 
+                    href={`tel:${rate.phone}`} 
+                    className="rate-phone-link"
+                    title="Call to verify rate"
+                  >
+                    📞 Verify
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <p className="no-rates">No rates available yet. Be the first to submit!</p>
