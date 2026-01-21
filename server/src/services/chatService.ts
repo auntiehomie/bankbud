@@ -85,11 +85,18 @@ Your role:
 - Ask clarifying questions to better understand their situation
 - Explain financial concepts in simple terms
 - Be encouraging and supportive about their financial goals
+- Access current information from the web when users ask about recent rates or news
+
+Capabilities:
+- You have access to current web information for recent banking news and rates
+- You can search for the latest information when users ask about "current", "latest", or "today's" rates
+- Always cite sources when providing current information from web searches
 
 Important guidelines:
 - Always consider the user's complete conversation history
 - Reference specific rates and banks from the available data when relevant
 - If asked about rates, use the actual current data provided
+- When you use web search results, mention that the information is current
 - Help users compare options based on their priorities
 - Ask about their goals, budget, time horizon, and risk tolerance
 - Be conversational and empathetic
@@ -100,10 +107,44 @@ ${JSON.stringify(conversation.userPreferences || {}, null, 2)}
 ${ratesContext}`;
 
   try {
+    // First, check if the user is asking for current information that might need web search
+    const needsWebSearch = /current|latest|today|2026|recent|now|what is|tell me about/i.test(message);
+    
+    let webSearchContext = '';
+    if (needsWebSearch) {
+      // Use Perplexity for web search since it has access to current information
+      try {
+        const { searchBankRatesWithPerplexity } = await import('./perplexityService.js');
+        // Extract any bank names or topics from the message
+        const searchPrompt = message;
+        const Perplexity = (await import('@perplexity-ai/perplexity_ai')).default;
+        const perplexityClient = new Perplexity({
+          apiKey: process.env.PERPLEXITY_API_KEY || ''
+        });
+        
+        const searchResponse = await perplexityClient.chat.completions.create({
+          model: 'sonar',
+          messages: [
+            { role: 'system', content: 'You are a financial information researcher. Provide current, factual information about banking rates and financial products.' },
+            { role: 'user', content: `Search for current information about: ${message}` }
+          ],
+          stream: false
+        });
+        
+        webSearchContext = searchResponse.choices?.[0]?.message?.content || '';
+        if (webSearchContext) {
+          webSearchContext = `\n\nCurrent Web Information:\n${webSearchContext}\n`;
+        }
+      } catch (searchError) {
+        console.error('Web search error:', searchError);
+        // Continue without web search if it fails
+      }
+    }
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: systemPrompt + webSearchContext },
         ...conversationHistory
       ],
       temperature: 0.7,
