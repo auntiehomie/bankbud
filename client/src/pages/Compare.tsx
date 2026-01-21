@@ -692,10 +692,22 @@ function RateCard({
         <div className="rate-display">
           <span className="rate-number">{(rate.apy || rate.rate).toFixed(2)}%</span>
           <span className="rate-label">APY</span>
+          {rate.dataSource === 'api' && (
+            <span className="ai-warning" title="AI-generated rate - verify with bank">
+              ⚠️ Verify
+            </span>
+          )}
         </div>
       </div>
 
       <div className="rate-card-body">
+        {rate.dataSource === 'api' && (
+          <div className="rate-notice">
+            <strong>⚠️ AI-Generated Rate:</strong> This rate was found using AI search and may not be current. 
+            Always verify by calling the bank or visiting their website.
+          </div>
+        )}
+        
         {rate.minDeposit !== undefined && (
           <div className="rate-detail">
             <span className="label">Min. Deposit:</span>

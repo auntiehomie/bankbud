@@ -11,7 +11,8 @@ const client = new Perplexity({
 });
 
 export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }: { bankName?: string; accountType?: string; zipCode?: string }): Promise<any[]> {
-  const prompt = `Search ${bankName}'s official website for their current ${accountType} account APY/interest rate as of ${new Date().getFullYear()}. What is the APY rate, minimum deposit, and any special features? Provide the exact rate number and the official website URL where you found it.`;
+  const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const prompt = `Find ${bankName}'s current ${accountType} account APY/interest rate as of ${currentDate}. Go directly to ${bankName}'s official website (not third-party sites). What is their CURRENT advertised APY, minimum deposit requirement, and special features TODAY? Provide the exact APY number and the official ${bankName} website URL where you found this information. If you cannot find current 2026 data, explicitly state that.`;
 
   try {
     const response = await client.chat.completions.create({
@@ -39,8 +40,15 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
       sourceUrl: '',
       rateInfo: text.substring(0, 500), // Store first 500 chars for display
       apy: null,
-      rate: null
+      rate: null,
+      dataFreshness: 'ai-generated',
+      lastChecked: new Date().toISOString()
     };
+    
+    // Check if AI indicated it couldn't find current data
+    if (text.match(/cannot find|unable to locate|no current|not available|as of.*202[0-4]/i)) {
+      rateData.rateInfo = '⚠️ Current rate data unavailable. ' + rateData.rateInfo;
+    }
     
     // Try to extract APY/rate from text using regex
     const apyMatch = text.match(/(\d+\.?\d*)\s*%?\s*(?:APY|apy)/i);
@@ -64,6 +72,12 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     }
     
     console.log(`Parsed ${bankName}: APY=${rateData.apy || 'N/A'}, URL=${rateData.sourceUrl || 'N/A'}`);
+    
+    // Add warning in rateInfo if no URL was found (suggests data may be unreliable)
+    if (!rateData.sourceUrl) {
+      rateData.rateInfo = '⚠️ No source URL found - please verify rate directly. ' + rateData.rateInfo;
+      console.warn(`Warning: No source URL found for ${bankName}`);
+    }
     
     return [rateData];
   } catch (error: any) {
