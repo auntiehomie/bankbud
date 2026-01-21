@@ -175,6 +175,26 @@
   transform: translateY(-1px);
 }
 
+.rate-correction {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.correction-link {
+  display: inline-block;
+  color: #f59e0b;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+}
+
+.correction-link:hover {
+  color: #d97706;
+  text-decoration: underline;
+}
+
 .no-rates {
   color: var(--text-secondary);
   font-style: italic;

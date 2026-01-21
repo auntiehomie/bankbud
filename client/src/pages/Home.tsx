@@ -181,6 +181,11 @@ function RateSection({ title, rates, type }: { title: string; rates: BankRate[];
                   </a>
                 )}
               </div>
+              <div className="rate-correction">
+                <Link to="/submit" className="correction-link">
+                  Looks wrong? Submit a correction →
+                </Link>
+              </div>
             </div>
           ))}
         </div>
