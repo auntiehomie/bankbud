@@ -121,9 +121,45 @@
   color: var(--secondary);
 }
 
-.rate-verified {
+.rate-info-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   font-size: 0.875rem;
+}
+
+.rate-verified {
   color: var(--text-secondary);
+}
+
+.rate-verified-link {
+  color: var(--success);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rate-verified-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.rate-phone-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  background: rgba(99, 102, 241, 0.1);
+  transition: all 0.2s;
+}
+
+.rate-phone-link:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: translateY(-1px);
 }
 
 .no-rates {

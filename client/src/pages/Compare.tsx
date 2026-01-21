@@ -305,15 +305,30 @@ export default function Compare() {
         <div className="compare-header">
           <h1>Compare Bank Rates</h1>
           <p>Live rates from top Michigan banks and online banks</p>
+          
           {rates.length > 0 && (
-            <button 
-              className="btn-small btn-outline" 
-              onClick={() => loadRates()}
-              style={{ marginTop: '1rem' }}
-            >
-              🔄 Refresh Rates
-            </button>
+            <div className="header-actions">
+              <div className="last-updated">
+                <span className="update-label">Rates updated as of:</span>
+                <span className="update-time">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+              </div>
+              <button 
+                className="btn-small btn-outline" 
+                onClick={() => loadRates()}
+              >
+                🔄 Refresh Rates
+              </button>
+            </div>
           )}
+          
+          <div className="disclaimer">
+            <div className="disclaimer-icon">⚠️</div>
+            <div className="disclaimer-content">
+              <strong>Important Disclaimer:</strong> The rates displayed are for informational purposes only and do not constitute financial advice. 
+              Rates are subject to change and may vary based on location, account balance, and other factors. 
+              <strong> Always verify current rates by contacting the financial institution directly before making any decisions.</strong>
+            </div>
+          </div>
         </div>
 
         <div className="filters">
@@ -405,12 +420,29 @@ export default function Compare() {
 
         <BenchmarkRates />
 
+        {/* Community Contribution Call-to-Action */}
+        <div className="community-cta">
+          <div className="community-cta-content">
+            <div className="community-cta-icon">👥</div>
+            <div className="community-cta-text">
+              <h3>Help Keep Rates Accurate</h3>
+              <p>Found a better rate? Noticed outdated information? Share it with the community!</p>
+            </div>
+            <a href="/submit" className="btn btn-primary">
+              📝 Submit a Rate
+            </a>
+          </div>
+        </div>
+
         {recentRates.length > 0 && (
           <div className="recent-submissions">
             <div className="recent-header">
               <CheckCircle size={20} />
               <h2>Recently Submitted by Community</h2>
               <span className="recent-count">{recentRates.length} new</span>
+              <a href="/submit" className="submit-link">
+                Submit yours →
+              </a>
             </div>
             <div className="recent-rates">
               {recentRates.map((rate) => (
@@ -702,46 +734,50 @@ function RateCard({
       </div>
 
       <div className="rate-card-footer">
-        <div className="verification-info">
-          <CheckCircle size={16} />
-          <span>{rate.verifications} verified</span>
+        <div className="verification-info-section">
+          <button 
+            className="verification-info-button"
+            onClick={() => rate.scrapedUrl && window.open(rate.scrapedUrl, '_blank')}
+            title="View verification sources"
+          >
+            <CheckCircle size={16} />
+            <span>{rate.verifications} verified</span>
+          </button>
+          
+          {rate.reports > 0 && (
+            <div className="report-info">
+              <AlertCircle size={16} />
+              <span>{rate.reports} reports</span>
+            </div>
+          )}
         </div>
-        
-        {rate.reports > 0 && (
-          <div className="report-info">
-            <AlertCircle size={16} />
-            <span>{rate.reports} reports</span>
-          </div>
-        )}
-        {rate.scrapedUrl && (
-          <a 
-            href={rate.scrapedUrl} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="source-link"
-            title="View source"
-          >
-            Source
-          </a>
-        )}
-        {rate.scrapedUrl && (
-          <a 
-            href={rate.scrapedUrl} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="source-link"
-            title="View source"
-          >
-            Source
-          </a>
-        )}
 
         <div className="rate-actions">
+          {rate.phone && (
+            <a 
+              href={`tel:${rate.phone}`}
+              className="btn-small btn-primary verify-rate-btn"
+              title="Call to verify rate"
+            >
+              📞 Verify Rate
+            </a>
+          )}
+          {rate.scrapedUrl && (
+            <a 
+              href={rate.scrapedUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-small btn-outline"
+              title="View official source"
+            >
+              🔗 Source
+            </a>
+          )}
           <button 
             className="btn-small btn-outline" 
             onClick={() => onVerify(rate._id, rate)}
           >
-            Verify
+            ✓ Verify
           </button>
           <button 
             className="btn-small btn-text" 
