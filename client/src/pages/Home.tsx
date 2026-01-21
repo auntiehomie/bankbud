@@ -86,6 +86,14 @@ export default function Home() {
         <div className="container">
           <h2>Today's Top Rates</h2>
           
+          <div className="data-notice">
+            <span className="notice-icon">⚠️</span>
+            <div className="notice-content">
+              <strong>Community Data:</strong> These rates are from our database and may be outdated. 
+              <Link to="/compare">Check live rates</Link> or <Link to="/submit">submit current rates</Link> to help keep our data accurate!
+            </div>
+          </div>
+          
           {loading ? (
             <div className="loading">Loading rates...</div>
           ) : (

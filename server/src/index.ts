@@ -76,6 +76,54 @@ const startServer = async () => {
     await scrapeAllBanks();
   });
   
+  // Schedule AI rate updates - runs daily at 2 AM (before scraping)
+  cron.schedule('0 2 * * *', async () => {
+    console.log('⏰ Running scheduled AI rate updates...');
+    try {
+      const { searchRatesAndDistancesForBanks } = await import('./services/bankBatchService.js');
+      const accountTypes = ['savings', 'checking', 'cd'];
+      const BankRate = (await import('./models/BankRate.js')).default;
+      
+      for (const accountType of accountTypes) {
+        console.log(`Updating ${accountType} rates...`);
+        const results = await searchRatesAndDistancesForBanks(accountType);
+        
+        // Update database with fresh rates
+        for (const result of results) {
+          if (result.rate && result.rate.apy) {
+            await BankRate.findOneAndUpdate(
+              { bankName: result.bankName, accountType },
+              {
+                bankName: result.bankName,
+                accountType,
+                rate: result.rate.apy,
+                apy: result.rate.apy,
+                minDeposit: 0,
+                features: result.rate.rateInfo ? [result.rate.rateInfo.substring(0, 100)] : [],
+                verifications: 0,
+                reports: 0,
+                lastVerified: new Date(),
+                availability: result.serviceModel === 'online' ? 'national' : 'regional',
+                dataSource: 'api',
+                scrapedUrl: result.rate.sourceUrl || '',
+                phone: result.phone,
+                institutionType: result.type,
+                serviceModel: result.serviceModel,
+                lastScraped: new Date()
+              },
+              { upsert: true, new: true }
+            );
+          }
+        }
+        console.log(`✅ Updated ${accountType} rates`);
+      }
+      console.log('✅ AI rate update complete');
+    } catch (error) {
+      console.error('❌ AI rate update failed:', error);
+    }
+  });
+  
+  console.log('⏰ Scheduled daily AI rate updates at 2:00 AM');
   console.log('⏰ Scheduled daily rate scraping at 3:00 AM');
   
   // Optional: Run initial scrape on startup (uncomment to enable)
