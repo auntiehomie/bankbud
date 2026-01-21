@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import BankRate from '../models/BankRate.js';
+import { sendRateSubmissionEmail, sendRateReportEmail } from '../services/emailService.js';
 
 const router = Router();
 
@@ -109,6 +110,20 @@ router.post('/', async (req: Request, res: Response) => {
     
     await newRate.save();
     
+    // Send email notification (non-blocking)
+    sendRateSubmissionEmail({
+      bankName,
+      accountType,
+      rate,
+      apy: apy || rate,
+      minDeposit,
+      term,
+      features,
+      source,
+      notes,
+      submittedAt: new Date()
+    }).catch(err => console.error('Email notification failed:', err));
+    
     res.status(201).json(newRate);
   } catch (error) {
     console.error('Error creating rate:', error);
@@ -161,8 +176,18 @@ router.post('/:id/report', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Rate not found' });
     }
     
-    // In a production app, you'd log the report with the reason
+    // Log the report
     console.log(`Rate ${id} reported: ${reason}`);
+    
+    // Send email notification (non-blocking)
+    sendRateReportEmail({
+      bankName: rate.bankName,
+      accountType: rate.accountType,
+      rate: rate.rate,
+      reason,
+      reportedAt: new Date(),
+      rateId: id
+    }).catch(err => console.error('Email notification failed:', err));
     
     res.json({ message: 'Report submitted', rate });
   } catch (error) {

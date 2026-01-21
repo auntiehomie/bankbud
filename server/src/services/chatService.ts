@@ -1,12 +1,12 @@
-import OpenAI from 'openai';
+import { Mistral } from '@mistralai/mistralai';
 import Conversation, { IMessage } from '../models/Conversation.js';
 import BankRate from '../models/BankRate.js';
 
-let openai: OpenAI | null = null;
+let mistral: Mistral | null = null;
 
-if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+if (process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY !== 'your_mistral_api_key_here') {
+  mistral = new Mistral({
+    apiKey: process.env.MISTRAL_API_KEY,
   });
 }
 
@@ -23,8 +23,8 @@ interface ChatResponse {
 }
 
 export async function chatWithAI(request: ChatRequest): Promise<ChatResponse> {
-  if (!openai) {
-    throw new Error('OpenAI is not configured. Please add your API key to use AI features.');
+  if (!mistral) {
+    throw new Error('Mistral AI is not configured. Please add your API key to use AI features.');
   }
 
   const { sessionId, message, includeRates = true } = request;
@@ -127,7 +127,8 @@ ${ratesContext}`;
         stream: false
       });
       
-      webSearchContext = searchResponse.choices?.[0]?.message?.content || '';
+      const messageContent = searchResponse.choices?.[0]?.message?.content;
+      webSearchContext = typeof messageContent === 'string' ? messageContent : '';
       if (webSearchContext) {
         webSearchContext = `\n\nCurrent Web Information (January 2026):\n${webSearchContext}\n`;
       }
@@ -136,17 +137,17 @@ ${ratesContext}`;
       // Continue without web search if it fails
     }
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+    const completion = await mistral.chat.complete({
+      model: 'mistral-large-latest',
       messages: [
         { role: 'system', content: systemPrompt + webSearchContext },
         ...conversationHistory
       ],
       temperature: 0.7,
-      max_tokens: 800,
+      maxTokens: 800,
     });
 
-    const assistantMessage = completion.choices[0].message.content || 'I apologize, but I encountered an error. Please try again.';
+    const assistantMessage = completion.choices?.[0]?.message?.content || 'I apologize, but I encountered an error. Please try again.';
 
     // Add assistant response to conversation
     conversation.messages.push({
@@ -226,13 +227,13 @@ function updateUserPreferences(conversation: any, message: string) {
 
 // Helper function to generate conversation summary
 async function generateConversationSummary(messages: IMessage[]): Promise<string> {
-  if (!openai) return 'Conversation about banking needs';
+  if (!mistral) return 'Conversation about banking needs';
 
   const recentMessages = messages.slice(-20).map(m => `${m.role}: ${m.content}`).join('\n');
   
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+    const completion = await mistral.chat.complete({
+      model: 'mistral-small-latest',
       messages: [
         {
           role: 'system',
@@ -244,10 +245,10 @@ async function generateConversationSummary(messages: IMessage[]): Promise<string
         }
       ],
       temperature: 0.5,
-      max_tokens: 100,
+      maxTokens: 100,
     });
 
-    return completion.choices[0].message.content || 'Banking conversation';
+    return completion.choices?.[0]?.message?.content || 'Banking conversation';
   } catch (error) {
     console.error('Error generating summary:', error);
     return 'Banking conversation';

@@ -48,7 +48,16 @@ npm install
 PORT=3001
 MONGODB_URI=mongodb://localhost:27017/bankbud
 OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 NODE_ENV=development
+
+# Email Notifications (Optional)
+# For Gmail, generate an App Password: https://myaccount.google.com/apppasswords
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_gmail_app_password
+ADMIN_EMAIL=your_email@gmail.com
 ```
 
 4. Start the development servers:
