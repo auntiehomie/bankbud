@@ -5,27 +5,101 @@ interface BankInfo {
   type: 'bank' | 'credit-union';
   serviceModel: 'online' | 'branch' | 'hybrid';
   phone: string;
+  mainBranch?: {
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    lat: number;
+    lon: number;
+  };
 }
 
 const banks: BankInfo[] = [
   // Michigan Branch Banks
-  { name: "Flagstar Bank", type: "bank", serviceModel: "branch", phone: "1-800-968-7700" },
-  { name: "Key Bank", type: "bank", serviceModel: "branch", phone: "1-800-539-2968" },
-  { name: "Huntington Bank", type: "bank", serviceModel: "branch", phone: "1-800-480-2265" },
-  { name: "First Merchants Bank", type: "bank", serviceModel: "branch", phone: "1-800-205-3464" },
-  { name: "Citizens State Bank", type: "bank", serviceModel: "branch", phone: "1-989-723-2161" },
-  { name: "Comerica Bank", type: "bank", serviceModel: "branch", phone: "1-800-925-2160" },
+  { 
+    name: "Flagstar Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-968-7700",
+    mainBranch: { address: "5151 Corporate Dr", city: "Troy", state: "MI", zip: "48098", lat: 42.5633, lon: -83.1458 }
+  },
+  { 
+    name: "Key Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-539-2968",
+    mainBranch: { address: "127 Public Square", city: "Cleveland", state: "OH", zip: "44114", lat: 41.5012, lon: -81.6937 }
+  },
+  { 
+    name: "Huntington Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-480-2265",
+    mainBranch: { address: "41 S High St", city: "Columbus", state: "OH", zip: "43215", lat: 39.9612, lon: -82.9988 }
+  },
+  { 
+    name: "First Merchants Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-205-3464",
+    mainBranch: { address: "200 E Jackson St", city: "Muncie", state: "IN", zip: "47305", lat: 40.1934, lon: -85.3863 }
+  },
+  { 
+    name: "Citizens State Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-989-723-2161",
+    mainBranch: { address: "320 N McEwan St", city: "Clare", state: "MI", zip: "48617", lat: 43.8197, lon: -84.7697 }
+  },
+  { 
+    name: "Comerica Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-925-2160",
+    mainBranch: { address: "1717 Main St", city: "Dallas", state: "TX", zip: "75201", lat: 32.7817, lon: -96.7979 }
+  },
   
   // Michigan Credit Unions
-  { name: "Michigan Schools and Government Credit Union", type: "credit-union", serviceModel: "branch", phone: "1-866-674-2848" },
-  { name: "Lake Michigan Credit Union", type: "credit-union", serviceModel: "branch", phone: "1-616-242-9790" },
+  { 
+    name: "Michigan Schools and Government Credit Union", 
+    type: "credit-union", 
+    serviceModel: "branch", 
+    phone: "1-866-674-2848",
+    mainBranch: { address: "3777 West Road", city: "East Lansing", state: "MI", zip: "48823", lat: 42.7533, lon: -84.5120 }
+  },
+  { 
+    name: "Lake Michigan Credit Union", 
+    type: "credit-union", 
+    serviceModel: "branch", 
+    phone: "1-616-242-9790",
+    mainBranch: { address: "525 Leonard St NW", city: "Grand Rapids", state: "MI", zip: "49504", lat: 42.9817, lon: -85.6742 }
+  },
   
   // National Branch Banks
-  { name: "Citizens Bank", type: "bank", serviceModel: "branch", phone: "1-800-922-9999" },
-  { name: "Chase Bank", type: "bank", serviceModel: "branch", phone: "1-800-935-9935" },
-  { name: "Bank of America", type: "bank", serviceModel: "branch", phone: "1-800-432-1000" },
+  { 
+    name: "Citizens Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-922-9999",
+    mainBranch: { address: "1 Citizens Plaza", city: "Providence", state: "RI", zip: "02903", lat: 41.8240, lon: -71.4128 }
+  },
+  { 
+    name: "Chase Bank", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-935-9935",
+    mainBranch: { address: "383 Madison Ave", city: "New York", state: "NY", zip: "10179", lat: 40.7580, lon: -73.9855 }
+  },
+  { 
+    name: "Bank of America", 
+    type: "bank", 
+    serviceModel: "branch", 
+    phone: "1-800-432-1000",
+    mainBranch: { address: "100 N Tryon St", city: "Charlotte", state: "NC", zip: "28255", lat: 35.2271, lon: -80.8431 }
+  },
   
-  // Online-Only Banks
+  // Online-Only Banks (no physical branches)
   { name: "American Express National Bank", type: "bank", serviceModel: "online", phone: "1-800-446-6307" },
   { name: "Ally Bank", type: "bank", serviceModel: "online", phone: "1-877-247-2559" },
   { name: "CIT Bank", type: "bank", serviceModel: "online", phone: "1-855-462-2652" },
@@ -82,50 +156,97 @@ export async function getNearestBranchAddress(bankName: string, zipCode: string)
 }
 
 // Batch search for rates and distances (simplified without branch search to avoid timeout)
-export async function searchRatesAndDistancesForBanks(accountType = "savings", zipCode = "") {
+export async function searchRatesAndDistancesForBanks(accountType = "savings", zipCode = "", userLat?: number, userLon?: number) {
   const results = [];
-  for (const bankInfo of banks) {
-    try {
-      const rate = await (await import('./perplexityService.js')).searchBankRatesWithPerplexity({ bankName: bankInfo.name, accountType, zipCode });
-      const rateData = rate[0] || null;
-      
-      // Add bank metadata to the result
-      if (rateData) {
-        rateData.phone = bankInfo.phone;
-        rateData.institutionType = bankInfo.type;
-        rateData.serviceModel = bankInfo.serviceModel;
-      }
-      
-      results.push({ 
-        bankName: bankInfo.name, 
-        type: bankInfo.type,
-        serviceModel: bankInfo.serviceModel,
-        phone: bankInfo.phone,
-        rate: rateData, 
-        branchAddress: null, 
-        distanceKm: null 
-      });
-      console.log(`Searched ${bankInfo.name}: ${rateData ? 'Found data' : 'No data found'}`);
-    } catch (err) {
-      console.error(`Error searching ${bankInfo.name}:`, err);
-      results.push({ 
-        bankName: bankInfo.name,
-        type: bankInfo.type,
-        serviceModel: bankInfo.serviceModel,
-        phone: bankInfo.phone,
-        rate: { 
-          bankName: bankInfo.name, 
-          phone: bankInfo.phone,
-          institutionType: bankInfo.type,
-          serviceModel: bankInfo.serviceModel,
-          rateInfo: 'Unable to retrieve rate information. Please call for current rates.',
-          apy: null 
-        }, 
-        branchAddress: null, 
-        distanceKm: null 
-      });
-    }
-    await new Promise(res => setTimeout(res, 500)); // reduce delay to 500ms
+  
+  // If user provided lat/lon, use that. Otherwise geocode the zip.
+  let userCoords: { lat: number, lon: number } | null = null;
+  if (userLat !== undefined && userLon !== undefined) {
+    userCoords = { lat: userLat, lon: userLon };
+  } else if (zipCode) {
+    userCoords = await geocodeZip(zipCode);
   }
+  
+  // Process banks in parallel batches of 4 to speed up the process
+  const BATCH_SIZE = 4;
+  const perplexityService = await import('./perplexityService.js');
+  
+  for (let i = 0; i < banks.length; i += BATCH_SIZE) {
+    const batch = banks.slice(i, i + BATCH_SIZE);
+    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(banks.length / BATCH_SIZE)}`);
+    
+    // Process this batch in parallel
+    const batchPromises = batch.map(async (bankInfo) => {
+      try {
+        const rate = await perplexityService.searchBankRatesWithPerplexity({ 
+          bankName: bankInfo.name, 
+          accountType, 
+          zipCode 
+        });
+        const rateData = rate[0] || null;
+        
+        // Add bank metadata to the result
+        if (rateData) {
+          rateData.phone = bankInfo.phone;
+          rateData.institutionType = bankInfo.type;
+          rateData.serviceModel = bankInfo.serviceModel;
+        }
+        
+        // Calculate distance if we have user coords and bank has a branch
+        let distanceKm: number | null = null;
+        let branchInfo: string | null = null;
+        if (userCoords && bankInfo.mainBranch) {
+          distanceKm = haversineDistance(
+            userCoords.lat, 
+            userCoords.lon, 
+            bankInfo.mainBranch.lat, 
+            bankInfo.mainBranch.lon
+          );
+          branchInfo = `${bankInfo.mainBranch.address}, ${bankInfo.mainBranch.city}, ${bankInfo.mainBranch.state} ${bankInfo.mainBranch.zip}`;
+        }
+        
+        console.log(`✓ ${bankInfo.name}: ${rateData ? 'Found data' : 'No data found'}${distanceKm ? ` (${distanceKm.toFixed(1)} km away)` : ''}`);
+        
+        return { 
+          bankName: bankInfo.name, 
+          type: bankInfo.type,
+          serviceModel: bankInfo.serviceModel,
+          phone: bankInfo.phone,
+          rate: rateData, 
+          branchAddress: branchInfo, 
+          distanceKm: distanceKm 
+        };
+      } catch (err) {
+        console.error(`✗ Error searching ${bankInfo.name}:`, err);
+        return { 
+          bankName: bankInfo.name,
+          type: bankInfo.type,
+          serviceModel: bankInfo.serviceModel,
+          phone: bankInfo.phone,
+          rate: { 
+            bankName: bankInfo.name, 
+            phone: bankInfo.phone,
+            institutionType: bankInfo.type,
+            serviceModel: bankInfo.serviceModel,
+            rateInfo: 'Unable to retrieve rate information. Please call for current rates.',
+            apy: null 
+          }, 
+          branchAddress: null, 
+          distanceKm: null 
+        };
+      }
+    });
+    
+    // Wait for the entire batch to complete
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+    
+    // Small delay between batches to avoid rate limiting (reduced from 500ms per bank to 200ms per batch)
+    if (i + BATCH_SIZE < banks.length) {
+      await new Promise(res => setTimeout(res, 200));
+    }
+  }
+  
+  console.log(`Completed search for ${results.length} banks in parallel batches`);
   return results;
 }

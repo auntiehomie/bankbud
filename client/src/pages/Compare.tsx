@@ -17,6 +17,11 @@ export default function Compare() {
   const [verifyType, setVerifyType] = useState<'seen' | 'false' | null>(null);
   const [reportReason, setReportReason] = useState('');
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
+  const [banksProcessed, setBanksProcessed] = useState<number>(0);
+  const [totalBanks, setTotalBanks] = useState<number>(18);
+  const [userLocation, setUserLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [locationRequested, setLocationRequested] = useState(false);
 
   const CACHE_KEY = 'bankbud_rates_cache';
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -26,10 +31,46 @@ export default function Compare() {
     loadRatesWithCache();
   }, []);
 
+  // Reload rates when account type changes (except 'all')
+  useEffect(() => {
+    if (accountType !== 'all') {
+      loadRatesForAccountType(accountType);
+    }
+  }, [accountType]);
+
   useEffect(() => {
     filterAndSortRates();
     getRecentSubmissions();
   }, [rates, accountType, sortBy]);
+
+  const getCacheKey = (type: string) => {
+    return type === 'all' ? CACHE_KEY : `${CACHE_KEY}_${type}`;
+  };
+
+  const loadRatesForAccountType = async (type: string) => {
+    const cacheKey = getCacheKey(type);
+    
+    // Check for cached data first
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        
+        // If cache is less than 24 hours old, use it
+        if (age < CACHE_DURATION) {
+          console.log(`Using cached ${type} rates, age:`, Math.round(age / (60 * 1000)), 'minutes');
+          setRates(data);
+          return;
+        }
+      } catch (err) {
+        console.error('Error reading cache:', err);
+      }
+    }
+    
+    // Fetch fresh data for this account type
+    await loadRates(type);
+  };
 
   const loadRatesWithCache = async () => {
     // Check for cached data first
@@ -55,30 +96,41 @@ export default function Compare() {
     await loadRates();
   };
 
-  const loadRates = async () => {
+  const loadRates = async (type?: string) => {
     setLoading(true);
     setError(null);
     setLoadingProgress(0);
+    setBanksProcessed(0);
+    setLoadingMessage('Initializing search...');
     
-    // Simulate progress for better UX
+    const targetType = type || (accountType !== 'all' ? accountType : undefined);
+    const cacheKey = getCacheKey(targetType || 'all');
+    
+    // Poll for progress updates
+    const startTime = Date.now();
     const progressInterval = setInterval(() => {
-      setLoadingProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + Math.random() * 15;
-      });
-    }, 500);
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setLoadingMessage(`Searching banks... (${elapsed}s elapsed)`);
+    }, 1000);
     
     try {
-      const data = await api.getRatesAI(zipCode, accountType !== 'all' ? accountType : undefined);
+      setLoadingMessage('Contacting bank APIs...');
+      const data = await api.getRatesAI(
+        zipCode, 
+        targetType, 
+        userLocation?.latitude, 
+        userLocation?.longitude
+      );
       setRates(data);
       
       // Cache the data
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
+      localStorage.setItem(cacheKey, JSON.stringify({
         data,
         timestamp: Date.now()
       }));
       
       setLoadingProgress(100);
+      setLoadingMessage('Complete!');
     } catch (err) {
       setError('Failed to load rates. Please try again.');
     } finally {
@@ -86,6 +138,8 @@ export default function Compare() {
       setTimeout(() => {
         setLoading(false);
         setLoadingProgress(0);
+        setBanksProcessed(0);
+        setLoadingMessage('');
       }, 300);
     }
   };
@@ -203,15 +257,39 @@ export default function Compare() {
     return (
       <div className="loading-container">
         <div className="loading-content">
-          <h2>Loading Rates...</h2>
-          <p>Searching {18} banks and credit unions for the best rates</p>
-          <div className="progress-bar-container">
-            <div 
-              className="progress-bar-fill" 
-              style={{ width: `${loadingProgress}%` }}
-            />
+          <div className="loading-spinner"></div>
+          <h2>Fetching Current Rates</h2>
+          <p className="loading-description">
+            We're searching {totalBanks}+ banks and credit unions for the best rates.
+            This may take 20-30 seconds.
+          </p>
+          
+          <div className="loading-steps">
+            <div className="loading-step">
+              <div className="step-icon">🏦</div>
+              <div className="step-text">Querying major banks</div>
+            </div>
+            <div className="loading-step">
+              <div className="step-icon">💻</div>
+              <div className="step-text">Checking online banks</div>
+            </div>
+            <div className="loading-step">
+              <div className="step-icon">🏛️</div>
+              <div className="step-text">Searching credit unions</div>
+            </div>
+            <div className="loading-step">
+              <div className="step-icon">📊</div>
+              <div className="step-text">Calculating distances</div>
+            </div>
           </div>
-          <p className="loading-percentage">{Math.round(loadingProgress)}%</p>
+          
+          {loadingMessage && (
+            <p className="loading-status">{loadingMessage}</p>
+          )}
+          
+          <div className="loading-tips">
+            <p><strong>💡 Tip:</strong> Results are cached for 24 hours for faster loading next time!</p>
+          </div>
         </div>
       </div>
     );
@@ -230,7 +308,7 @@ export default function Compare() {
           {rates.length > 0 && (
             <button 
               className="btn-small btn-outline" 
-              onClick={loadRates}
+              onClick={() => loadRates()}
               style={{ marginTop: '1rem' }}
             >
               🔄 Refresh Rates
@@ -271,7 +349,7 @@ export default function Compare() {
             />
             <button 
               className="btn-small btn-primary" 
-              onClick={loadRates}
+              onClick={() => loadRates()}
               disabled={zipCode.length > 0 && zipCode.length !== 5}
             >
               Search
@@ -279,9 +357,47 @@ export default function Compare() {
             {zipCode && (
               <button 
                 className="btn-small btn-text" 
-                onClick={() => { setZipCode(''); loadRates(); }}
+                onClick={() => { setZipCode(''); setUserLocation(null); loadRates(); }}
               >
                 Clear
+              </button>
+            )}
+          </div>
+
+          <div className="filter-group">
+            <button 
+              className="btn-small btn-outline" 
+              onClick={() => {
+                if (!navigator.geolocation) {
+                  setError('Geolocation is not supported by your browser');
+                  return;
+                }
+                
+                setLocationRequested(true);
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setUserLocation({ latitude, longitude });
+                    setZipCode(''); // Clear zip when using location
+                    loadRates(); // Reload with new location
+                  },
+                  (error) => {
+                    console.error('Geolocation error:', error);
+                    setError('Unable to get your location. Please enable location services.');
+                    setLocationRequested(false);
+                  }
+                );
+              }}
+              disabled={locationRequested && userLocation !== null}
+            >
+              📍 {userLocation ? 'Location Set' : 'Use My Location'}
+            </button>
+            {userLocation && (
+              <button 
+                className="btn-small btn-text" 
+                onClick={() => { setUserLocation(null); setLocationRequested(false); loadRates(); }}
+              >
+                Clear Location
               </button>
             )}
           </div>

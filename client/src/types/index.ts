@@ -21,6 +21,11 @@ export interface BankRate {
   dataSource: 'community' | 'scraped' | 'api';
   lastScraped?: string;
   scrapedUrl?: string;
+  distance?: number; // distance in km from user's location
+  branchAddress?: string; // nearest branch address
+  phone?: string; // bank phone number
+  institutionType?: 'bank' | 'credit-union';
+  serviceModel?: 'online' | 'branch' | 'hybrid';
   createdAt: string;
   updatedAt: string;
 }

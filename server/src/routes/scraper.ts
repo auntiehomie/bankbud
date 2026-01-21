@@ -146,57 +146,65 @@ router.post('/ai-update', async (req: Request, res: Response) => {
 router.post('/ai-search-bank', async (req: Request, res: Response) => {
   try {
     console.log('AI search endpoint hit');
-    const { zipCode, accountType } = req.body;
-    console.log('Received zipCode:', zipCode, 'accountType:', accountType);
+    const { zipCode, accountType, latitude, longitude } = req.body;
+    console.log('Received zipCode:', zipCode, 'accountType:', accountType, 'coords:', latitude, longitude);
     
-    // Use batch search for core banks when no zipCode is provided
-    if (!zipCode) {
-      console.log('No zipCode provided, using batch search for core banks');
-      const results = await searchRatesAndDistancesForBanks(accountType || 'savings', '');
-      
-      // Format results to match BankRate interface expected by frontend
-      const formattedRates = results
-        .filter(r => r.rate)
-        .map((r, index) => ({
-          _id: `ai-${index}-${Date.now()}`,
-          bankName: r.bankName,
-          accountType: accountType || 'savings',
-          rate: r.rate.apy || r.rate.rate || 0,
-          apy: r.rate.apy || r.rate.rate || 0,
-          minDeposit: 0,
-          institutionType: r.type,
-          serviceModel: r.serviceModel,
-          features: [
-            r.type === 'credit-union' ? '🏛️ Credit Union' : '🏦 Bank',
-            r.serviceModel === 'online' ? '💻 Online Only' : r.serviceModel === 'branch' ? '🏢 Branch Banking' : '🏢💻 Hybrid',
-            r.rate.rateRange ? `Rate Range: ${r.rate.rateRange}` : '',
-            r.rate.rateInfo ? r.rate.rateInfo.substring(0, 200) + '...' : '',
-            r.phone ? `📞 ${r.phone}` : '',
-            r.rate.sourceUrl ? `🔗 Source` : '',
-            !r.rate.apy && !r.rate.rate ? '📝 Have a rate? Submit it!' : ''
-          ].filter(Boolean),
-          verifications: 0,
-          reports: 0,
-          lastVerified: new Date().toISOString(),
-          availability: r.serviceModel === 'online' ? 'national' as const : 'regional' as const,
-          dataSource: 'api' as const,
-          scrapedUrl: r.rate.sourceUrl || '',
-          phone: r.phone,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }));
-      
-      return res.json({ 
-        message: `Perplexity AI searched for rates from core banks`,
-        rates: formattedRates
-      });
-    }
+    // Use batch search for core banks
+    console.log('Using batch search for core banks');
+    const results = await searchRatesAndDistancesForBanks(
+      accountType || 'savings', 
+      zipCode || '',
+      latitude,
+      longitude
+    );
     
-    const rates = await searchBankRatesWithPerplexity({ bankName: undefined, accountType: accountType || 'savings', zipCode });
-    console.log('Rates returned from Perplexity:', rates);
-    res.json({ 
-      message: `Perplexity AI searched for rates near ${zipCode}`,
-      rates
+    // Format results to match BankRate interface expected by frontend
+    const formattedRates = results
+      .filter(r => r.rate)
+      .map((r, index) => ({
+        _id: `ai-${index}-${Date.now()}`,
+        bankName: r.bankName,
+        accountType: accountType || 'savings',
+        rate: r.rate.apy || r.rate.rate || 0,
+        apy: r.rate.apy || r.rate.rate || 0,
+        minDeposit: 0,
+        institutionType: r.type,
+        serviceModel: r.serviceModel,
+        features: [
+          r.type === 'credit-union' ? '🏛️ Credit Union' : '🏦 Bank',
+          r.serviceModel === 'online' ? '💻 Online Only' : r.serviceModel === 'branch' ? '🏢 Branch Banking' : '🏢💻 Hybrid',
+          r.distanceKm !== null ? `📍 ${r.distanceKm.toFixed(1)} km away` : '',
+          r.branchAddress ? `🏢 ${r.branchAddress}` : '',
+          r.rate.rateRange ? `Rate Range: ${r.rate.rateRange}` : '',
+          r.rate.rateInfo ? r.rate.rateInfo.substring(0, 200) + '...' : '',
+          r.phone ? `📞 ${r.phone}` : '',
+          r.rate.sourceUrl ? `🔗 Source` : '',
+          !r.rate.apy && !r.rate.rate ? '📝 Have a rate? Submit it!' : ''
+        ].filter(Boolean),
+        verifications: 0,
+        reports: 0,
+        lastVerified: new Date().toISOString(),
+        availability: r.serviceModel === 'online' ? 'national' as const : 'regional' as const,
+        dataSource: 'api' as const,
+        scrapedUrl: r.rate.sourceUrl || '',
+        phone: r.phone,
+        distance: r.distanceKm,
+        branchAddress: r.branchAddress,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+    
+    // Sort by distance if available, otherwise by rate
+    formattedRates.sort((a, b) => {
+      if (a.distance !== undefined && b.distance !== undefined && a.distance !== null && b.distance !== null) {
+        return a.distance - b.distance;
+      }
+      return (b.apy || 0) - (a.apy || 0);
+    });
+    
+    return res.json({ 
+      message: `Perplexity AI searched for rates from core banks`,
+      rates: formattedRates
     });
   } catch (error) {
     console.error('Error in AI bank search:', error);
