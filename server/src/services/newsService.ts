@@ -80,7 +80,10 @@ function parseNewsArticles(text: string): NewsArticle[] {
     try {
       // Extract title (usually first line or after "Title:")
       const titleMatch = block.match(/(?:Title:|^|\n)([^\n]+?)(?:\n|Source:|Summary:)/i);
-      const title = titleMatch ? titleMatch[1].trim().replace(/^[:\-*]+/, '').trim() : '';
+      let title = titleMatch ? titleMatch[1].trim().replace(/^[:\-*]+/, '').trim() : '';
+      
+      // Remove common prefixes like "Title:", "**Title:**", etc.
+      title = title.replace(/^\*{0,2}\s*Title:\*{0,2}\s*/i, '').trim();
       
       // Extract summary
       const summaryMatch = block.match(/Summary:?\s*([^\n]+(?:\n[^\n]+){0,2})/i);

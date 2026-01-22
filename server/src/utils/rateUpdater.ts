@@ -18,7 +18,7 @@ interface RateUpdateData {
 
 /**
  * Shared utility to update or create bank rate in database
- * Consolidates duplicate logic from aiSearchService and geminiService
+ * Consolidates duplicate database update logic
  */
 export async function updateOrCreateBankRate(
   rateData: RateUpdateData,

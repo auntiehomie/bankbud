@@ -1,4 +1,5 @@
 import Perplexity from '@perplexity-ai/perplexity_ai';
+import { fetchRSSFallbackRates } from './rssFeedService.js';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
@@ -12,13 +13,35 @@ const client = new Perplexity({
 
 export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }: { bankName?: string; accountType?: string; zipCode?: string }): Promise<any[]> {
   const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const prompt = `Find ${bankName}'s current ${accountType} account APY/interest rate as of ${currentDate}. Go directly to ${bankName}'s official website (not third-party sites). What is their CURRENT advertised APY, minimum deposit requirement, and special features TODAY? Provide the exact APY number and the official ${bankName} website URL where you found this information. If you cannot find current 2026 data, explicitly state that.`;
+  
+  // Enhanced prompt to force checking actual bank websites
+  const prompt = `IMPORTANT: You must visit the ACTUAL bank website to get the CURRENT ${currentDate} rate. Do not use cached or training data.
+
+TASK: Visit ${bankName}'s official website RIGHT NOW and find their current ${accountType} account APY as displayed on their site TODAY (${currentDate}).
+
+REQUIRED STEPS:
+1. Go directly to the official ${bankName} website
+2. Navigate to their ${accountType} accounts page
+3. Read the EXACT current APY shown on the page
+4. Verify this is their ${currentDate} rate, not an old rate
+
+Bank: ${bankName}
+Account Type: ${accountType}
+Today's Date: ${currentDate}
+
+Provide:
+- The EXACT APY shown on their website TODAY
+- The specific URL where you found this rate
+- Minimum deposit requirement
+- Any important features or requirements
+
+If the website shows the rate as of ${currentDate}, state that clearly. If you can only find older data, explicitly state that and provide the date of that data.`;
 
   try {
     const response = await client.chat.completions.create({
       model: 'sonar',
       messages: [
-        { role: 'system', content: 'You are a financial data researcher.' },
+        { role: 'system', content: 'You are a real-time web researcher. You MUST visit actual websites and provide current information as of today. Never use cached or training data for financial rates.' },
         { role: 'user', content: prompt }
       ],
       stream: false
@@ -72,6 +95,31 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     }
     
     console.log(`Parsed ${bankName}: APY=${rateData.apy || 'N/A'}, URL=${rateData.sourceUrl || 'N/A'}`);
+    
+    // FALLBACK: If Perplexity didn't find reliable data, try RSS feeds
+    if (!rateData.apy || !rateData.sourceUrl || rateData.rateInfo.includes('⚠️')) {
+      console.log(`⚠️ Perplexity data unreliable for ${bankName}, trying RSS fallback...`);
+      try {
+        const rssFallbackRates = await fetchRSSFallbackRates();
+        const fallbackRate = rssFallbackRates.find(
+          r => bankName && (
+            r.bankName.toLowerCase().includes(bankName.toLowerCase()) || 
+            bankName.toLowerCase().includes(r.bankName.toLowerCase())
+          )
+        );
+        
+        if (fallbackRate) {
+          console.log(`✓ Found RSS fallback rate for ${bankName}: ${fallbackRate.apy}%`);
+          rateData.apy = fallbackRate.apy;
+          rateData.rate = fallbackRate.apy;
+          rateData.sourceUrl = fallbackRate.sourceUrl;
+          rateData.dataFreshness = 'rss-feed';
+          rateData.rateInfo = `Rate from Bankrate/NerdWallet (${new Date().toLocaleDateString()})`;
+        }
+      } catch (fallbackError) {
+        console.error('RSS fallback also failed:', fallbackError);
+      }
+    }
     
     // Add warning in rateInfo if no URL was found (suggests data may be unreliable)
     if (!rateData.sourceUrl) {

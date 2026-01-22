@@ -1,9 +1,11 @@
 import axios from 'axios';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Mistral } from '@mistralai/mistralai';
 import BankRate from '../models/BankRate.js';
 import { updateOrCreateBankRate } from '../utils/rateUpdater.js';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const mistral = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY || '',
+});
 
 interface SearchResult {
   title: string;
@@ -13,7 +15,7 @@ interface SearchResult {
 
 /**
  * Search Google for bank rates and extract with AI
- * This uses Gemini to analyze search results
+ * This uses Mistral to analyze search results
  */
 export async function searchAndExtractRates(
   bankName?: string,
@@ -30,15 +32,7 @@ export async function searchAndExtractRates(
     } else {
       searchQuery = `${accountType} account APY rate ${new Date().getFullYear()}`;
     }
-    console.log('Gemini AI search - searchQuery:', searchQuery, 'bankName:', bankName, 'zipCode:', zipCode);
-
-    // Step 2: Use Gemini to search and analyze
-    const model = genAI.getGenerativeModel({ 
-      model: 'models/gemini-pro',
-      generationConfig: {
-        temperature: 0.1,
-      }
-    });
+    console.log('Mistral AI search - searchQuery:', searchQuery, 'bankName:', bankName, 'zipCode:', zipCode);
 
     const prompt = `You are a financial data researcher with access to current information.
 
@@ -69,13 +63,27 @@ Respond with JSON:
   "notes": ""
 }`;
     // Log the full prompt for debugging
-    console.log('Gemini Prompt:', prompt);
+    console.log('Mistral Prompt:', prompt);
 
     try {
-      console.log('Calling Gemini generateContent...');
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      console.log('Calling Mistral chat.complete...');
+      const completion = await mistral.chat.complete({
+        model: 'mistral-large-latest',
+        messages: [
+          { role: 'system', content: 'You are a financial data researcher. Always respond with valid JSON only.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1,
+        maxTokens: 500,
+      });
+
+      const rawContent = completion.choices?.[0]?.message?.content;
+      const text = typeof rawContent === 'string' 
+        ? rawContent 
+        : Array.isArray(rawContent) 
+          ? rawContent.map((chunk: any) => chunk.text || '').join('') 
+          : '';
+      
       // Log the raw AI response
       console.log('AI Search Response:', text);
 
@@ -93,9 +101,9 @@ Respond with JSON:
         return [];
       }
     } catch (err) {
-      console.error('Error during Gemini AI call:', err);
+      console.error('Error during Mistral AI call:', err);
       if (err && (err as any).stack) {
-        console.error('Gemini error stack:', (err as any).stack);
+        console.error('Mistral error stack:', (err as any).stack);
       }
       throw err;
     }
@@ -105,23 +113,12 @@ Respond with JSON:
   }
 }
 
-
 /**
- * List available Gemini models for debugging
+ * List available models for debugging (deprecated - Mistral doesn't have this feature)
  */
 export async function listAvailableGeminiModels(): Promise<any> {
-  try {
-    // @ts-ignore: This is not in the official types, but is available in the API
-    if (typeof (genAI as any).listModels !== 'function') {
-      throw new Error('listModels is not available in this version of @google/generative-ai');
-    }
-    const models = await (genAI as any).listModels();
-    console.log('Available Gemini models:', models);
-    return models;
-  } catch (error) {
-    console.error('Error listing Gemini models:', error);
-    return null;
-  }
+  console.log('Note: Model listing not available with Mistral API');
+  return null;
 }
 
 /**
