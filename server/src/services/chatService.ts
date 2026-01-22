@@ -128,7 +128,11 @@ ${ratesContext}`;
       });
       
       const messageContent = searchResponse.choices?.[0]?.message?.content;
-      webSearchContext = typeof messageContent === 'string' ? messageContent : '';
+      webSearchContext = typeof messageContent === 'string' 
+        ? messageContent 
+        : Array.isArray(messageContent) 
+          ? messageContent.map((chunk: any) => chunk.text || '').join('') 
+          : '';
       if (webSearchContext) {
         webSearchContext = `\n\nCurrent Web Information (January 2026):\n${webSearchContext}\n`;
       }
@@ -147,7 +151,12 @@ ${ratesContext}`;
       maxTokens: 800,
     });
 
-    const assistantMessage = completion.choices?.[0]?.message?.content || 'I apologize, but I encountered an error. Please try again.';
+    const rawContent = completion.choices?.[0]?.message?.content;
+    const assistantMessage = typeof rawContent === 'string' 
+      ? rawContent 
+      : Array.isArray(rawContent) 
+        ? rawContent.map((chunk: any) => chunk.text || '').join('') 
+        : 'I apologize, but I encountered an error. Please try again.';
 
     // Add assistant response to conversation
     conversation.messages.push({
@@ -248,7 +257,12 @@ async function generateConversationSummary(messages: IMessage[]): Promise<string
       maxTokens: 100,
     });
 
-    return completion.choices?.[0]?.message?.content || 'Banking conversation';
+    const summaryContent = completion.choices?.[0]?.message?.content;
+    return typeof summaryContent === 'string' 
+      ? summaryContent 
+      : Array.isArray(summaryContent) 
+        ? summaryContent.map((chunk: any) => chunk.text || '').join('') 
+        : 'Banking conversation';
   } catch (error) {
     console.error('Error generating summary:', error);
     return 'Banking conversation';
