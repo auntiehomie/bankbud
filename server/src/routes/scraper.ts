@@ -1,8 +1,6 @@
 import { searchRatesAndDistancesForBanks } from '../services/bankBatchService.js';
 import { Router, Request, Response } from 'express';
-import { scrapeAllBanks, scrapeBank } from '../services/scraperService.js';
 import { updateBankRatesWithSearch, listAvailableGeminiModels, searchAndExtractRates } from '../services/aiSearchService.js';
-// ...existing code...
 import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
 
 const router = Router();
@@ -51,39 +49,7 @@ router.get('/ai-gemini-models', async (req: Request, res: Response) => {
   }
 });
 
-// Trigger manual scraping of all banks
-router.post('/scrape-all', async (req: Request, res: Response) => {
-  try {
-    // Run scraping in background
-    scrapeAllBanks().catch(err => console.error('Scraping error:', err));
-    
-    res.json({ 
-      message: 'Scraping initiated. This may take a few minutes.',
-      status: 'processing'
-    });
-  } catch (error) {
-    console.error('Error initiating scrape:', error);
-    res.status(500).json({ error: 'Failed to initiate scraping' });
-  }
-});
-
-// Scrape specific bank
-router.post('/scrape/:bankName', async (req: Request, res: Response) => {
-  try {
-    const { bankName } = req.params;
-    const rates = await scrapeBank(bankName);
-    
-    res.json({ 
-      message: `Scraped ${rates.length} rates from ${bankName}`,
-      rates
-    });
-  } catch (error) {
-    console.error('Error scraping bank:', error);
-    res.status(500).json({ error: 'Failed to scrape bank' });
-  }
-});
-
-// Get last scrape status
+// Get last scrape status (now shows AI-updated rates)
 router.get('/status', async (req: Request, res: Response) => {
   try {
     const BankRate = (await import('../models/BankRate.js')).default;

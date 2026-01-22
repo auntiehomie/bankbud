@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import BankRate from '../models/BankRate.js';
+import { updateOrCreateBankRate } from '../utils/rateUpdater.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -9,8 +10,6 @@ interface SearchResult {
   link: string;
   snippet: string;
 }
-
-// ...existing code...
 
 /**
  * Search Google for bank rates and extract with AI
@@ -106,7 +105,6 @@ Respond with JSON:
   }
 }
 
-// ...existing code...
 
 /**
  * List available Gemini models for debugging
@@ -125,8 +123,6 @@ export async function listAvailableGeminiModels(): Promise<any> {
     return null;
   }
 }
-
-// ...existing code...
 
 /**
  * Update a specific bank's rates using AI search
@@ -147,41 +143,19 @@ export async function updateBankRatesWithSearch(
           continue;
         }
 
-        // Update or create rate in database
-        const existingRate = await BankRate.findOne({
+        // Use shared utility to update database
+        const updated = await updateOrCreateBankRate({
           bankName: rateData.bankName,
-          accountType: rateData.accountType,
+          accountType: rateData.accountType as any,
+          rate: rateData.rate || rateData.apy,
+          apy: rateData.apy,
+          minDeposit: rateData.minDeposit,
+          features: rateData.features,
+          sourceUrl: rateData.sourceUrl,
         });
-
-        if (existingRate) {
-          existingRate.rate = rateData.rate || rateData.apy;
-          existingRate.apy = rateData.apy;
-          existingRate.minDeposit = rateData.minDeposit;
-          existingRate.features = rateData.features || [];
-          existingRate.scrapedUrl = rateData.sourceUrl;
-          existingRate.lastScraped = new Date();
-          existingRate.dataSource = 'api';
-          await existingRate.save();
+        
+        if (updated) {
           updatedCount++;
-          console.log(`Updated ${bankName} ${accountType}: ${rateData.apy}%`);
-        } else if (rateData.apy > 0) {
-          await BankRate.create({
-            bankName: rateData.bankName,
-            accountType: rateData.accountType as any,
-            rate: rateData.rate || rateData.apy,
-            apy: rateData.apy,
-            minDeposit: rateData.minDeposit || 0,
-            features: rateData.features || [],
-            verifications: 0,
-            reports: 0,
-            lastVerified: new Date(),
-            scrapedUrl: rateData.sourceUrl,
-            availability: 'national',
-            dataSource: 'api',
-            lastScraped: new Date(),
-          });
-          updatedCount++;
-          console.log(`Created ${bankName} ${accountType}: ${rateData.apy}%`);
         }
       }
 

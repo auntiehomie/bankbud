@@ -10,7 +10,6 @@ import scraperRouter from './routes/scraper.js';
 import benchmarksRouter from './routes/benchmarks.js';
 import chatRouter from './routes/chat.js';
 import newsRouter from './routes/news.js';
-import { scrapeAllBanks } from './services/scraperService.js';
 
 dotenv.config();
 
@@ -70,13 +69,7 @@ const startServer = async () => {
     console.log(`📊 API available at http://localhost:${PORT}/api`);
   });
   
-  // Schedule automatic scraping - runs daily at 3 AM
-  cron.schedule('0 3 * * *', async () => {
-    console.log('⏰ Running scheduled bank rate scraping...');
-    await scrapeAllBanks();
-  });
-  
-  // Schedule AI rate updates - runs daily at 2 AM (before scraping)
+  // Schedule AI rate updates - runs daily at 2 AM
   cron.schedule('0 2 * * *', async () => {
     console.log('⏰ Running scheduled AI rate updates...');
     try {
@@ -124,11 +117,6 @@ const startServer = async () => {
   });
   
   console.log('⏰ Scheduled daily AI rate updates at 2:00 AM');
-  console.log('⏰ Scheduled daily rate scraping at 3:00 AM');
-  
-  // Optional: Run initial scrape on startup (uncomment to enable)
-  // console.log('🔄 Running initial rate scraping...');
-  // setTimeout(() => scrapeAllBanks(), 5000);
 };
 
 startServer();

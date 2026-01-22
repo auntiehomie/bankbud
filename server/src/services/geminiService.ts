@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 import BankRate from '../models/BankRate.js';
+import { updateOrCreateBankRate } from '../utils/rateUpdater.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -106,42 +107,19 @@ export async function updateRatesWithAI(
         continue;
       }
 
-      // Update or create rate in database
-      const existingRate = await BankRate.findOne({
+      // Use shared utility to update database
+      const updated = await updateOrCreateBankRate({
         bankName: aiRate.bankName,
         accountType: aiRate.accountType,
+        rate: aiRate.rate,
+        apy: aiRate.apy,
+        minDeposit: aiRate.minDeposit,
+        term: aiRate.term,
+        features: aiRate.features,
+        sourceUrl: aiRate.sourceUrl,
       });
-
-      if (existingRate) {
-        // Update existing rate
-        existingRate.rate = aiRate.rate;
-        existingRate.apy = aiRate.apy;
-        existingRate.minDeposit = aiRate.minDeposit;
-        existingRate.term = aiRate.term;
-        existingRate.features = aiRate.features;
-        existingRate.scrapedUrl = aiRate.sourceUrl;
-        existingRate.lastScraped = new Date();
-        existingRate.dataSource = 'api';
-        await existingRate.save();
-        updatedCount++;
-      } else {
-        // Create new rate
-        await BankRate.create({
-          bankName: aiRate.bankName,
-          accountType: aiRate.accountType,
-          rate: aiRate.rate,
-          apy: aiRate.apy,
-          minDeposit: aiRate.minDeposit || 0,
-          term: aiRate.term,
-          features: aiRate.features,
-          verifications: 0,
-          reports: 0,
-          lastVerified: new Date(),
-          scrapedUrl: aiRate.sourceUrl,
-          availability: 'national',
-          dataSource: 'api',
-          lastScraped: new Date(),
-        });
+      
+      if (updated) {
         updatedCount++;
       }
     }
