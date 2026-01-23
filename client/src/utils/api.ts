@@ -93,5 +93,11 @@ export const api = {
       params: { limit }
     });
     return response.data;
+  },
+
+  // Refresh rates - triggers database update
+  refreshRates: async () => {
+    const response = await axios.post(`${API_BASE}/rates/refresh`);
+    return response.data;
   }
 };

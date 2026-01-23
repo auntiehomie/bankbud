@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Users, ArrowRight, MessageCircle, Newspaper } from 'lucide-react';
+import { TrendingUp, Users, ArrowRight, MessageCircle, Newspaper, RefreshCw } from 'lucide-react';
 import { api } from '../utils/api';
 import { BankRate } from '../types';
 import './Home.css';
@@ -9,6 +9,7 @@ export default function Home() {
   const [topRates, setTopRates] = useState<Record<string, BankRate[]>>({});
   const [loading, setLoading] = useState(true);
   const [newsPreview, setNewsPreview] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadTopRates();
@@ -37,6 +38,24 @@ export default function Home() {
       setNewsPreview(news);
     } catch (error) {
       console.error('Failed to load news preview:', error);
+    }
+  };
+
+  const handleRefreshRates = async () => {
+    setRefreshing(true);
+    try {
+      await api.refreshRates();
+      // Clear localStorage cache
+      localStorage.removeItem('bankRatesCache');
+      localStorage.removeItem('bankRatesCacheTime');
+      // Reload rates
+      await loadTopRates();
+      alert('Rates refreshed successfully!');
+    } catch (error) {
+      console.error('Failed to refresh rates:', error);
+      alert('Failed to refresh rates. Please try again.');
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -84,7 +103,18 @@ export default function Home() {
 
       <section className="top-rates">
         <div className="container">
-          <h2>Today's Top Rates</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2>Today's Top Rates</h2>
+            <button 
+              onClick={handleRefreshRates} 
+              disabled={refreshing}
+              className="btn btn-outline"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+              {refreshing ? 'Refreshing...' : 'Refresh Rates'}
+            </button>
+          </div>
           
           <div className="data-notice">
             <span className="notice-icon">⚠️</span>
