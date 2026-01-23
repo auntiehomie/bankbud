@@ -1,10 +1,11 @@
 import axios from 'axios';
-import { Mistral } from '@mistralai/mistralai';
+import Perplexity from '@perplexity-ai/perplexity_ai';
 import BankRate from '../models/BankRate.js';
 import { updateOrCreateBankRate } from '../utils/rateUpdater.js';
+import { getBankRateUrl } from '../config/bankRateUrls.js';
 
-const mistral = new Mistral({
-  apiKey: process.env.MISTRAL_API_KEY || '',
+const perplexity = new Perplexity({
+  apiKey: process.env.PERPLEXITY_API_KEY || '',
 });
 
 interface SearchResult {
@@ -14,8 +15,8 @@ interface SearchResult {
 }
 
 /**
- * Search Google for bank rates and extract with AI
- * This uses Mistral to analyze search results
+ * Search for bank rates and extract with AI
+ * This uses Perplexity to search and analyze real websites
  */
 export async function searchAndExtractRates(
   bankName?: string,
@@ -23,7 +24,6 @@ export async function searchAndExtractRates(
   zipCode?: string
 ): Promise<any[]> {
   try {
-    // Step 1: Perform Google search using a simple HTTP request
     let searchQuery = '';
     if (zipCode) {
       searchQuery = `${accountType} account APY rate near ${zipCode} ${new Date().getFullYear()}`;
@@ -32,24 +32,29 @@ export async function searchAndExtractRates(
     } else {
       searchQuery = `${accountType} account APY rate ${new Date().getFullYear()}`;
     }
-    console.log('Mistral AI search - searchQuery:', searchQuery, 'bankName:', bankName, 'zipCode:', zipCode);
+    console.log('Perplexity AI search - searchQuery:', searchQuery, 'bankName:', bankName, 'zipCode:', zipCode);
 
-    const prompt = `You are a financial data researcher with access to current information.
+    const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    
+    // Get specific URL for this bank if available
+    const specificUrl = bankName ? getBankRateUrl(bankName, accountType as any) : null;
+    const urlInstruction = specificUrl 
+      ? `\n\nCRITICAL: Navigate DIRECTLY to this specific URL:\n${specificUrl}\n\nThis is where ${bankName} publishes their ${accountType} rates. Read the rate from this exact page.`
+      : '';
+    
+    const prompt = `CRITICAL: You MUST visit the actual ${bankName || 'bank'} website RIGHT NOW to get current ${currentDate} rates.
 
-TASK: Find the current ${accountType} account rate/APY for ${zipCode ? `banks near zip code ${zipCode}` : bankName ? bankName : 'all banks'} as of January 2026.
+TASK: Go to ${bankName ? `${bankName}'s official website` : 'top bank websites'} and find the CURRENT ${accountType} account APY as shown on their site TODAY (${currentDate}).
+${urlInstruction}
 
-SEARCH QUERY: "${searchQuery}"
+REQUIRED:
+1. Visit the official bank website directly${specificUrl ? ' at the URL provided above' : ''}
+2. Find the EXACT current APY displayed today
+3. Get the minimum deposit requirement
+4. Note any important features
+5. Provide the direct URL where you found this rate
 
-Please search for this information and provide:
-1. The exact current APY/rate
-2. Minimum deposit requirement
-3. Any notable features or requirements
-4. The official source URL
-5. The bank name
-
-If you cannot find current 2026 data, clearly state that and provide the most recent data available with the date.
-
-Respond with JSON:
+Respond ONLY with valid JSON:
 {
   "bankName": "",
   "accountType": "${accountType}",
@@ -58,23 +63,20 @@ Respond with JSON:
   "minDeposit": 0,
   "features": [],
   "sourceUrl": "",
-  "lastUpdated": "date",
+  "lastUpdated": "${currentDate}",
   "confidence": "high|medium|low",
   "notes": ""
 }`;
-    // Log the full prompt for debugging
-    console.log('Mistral Prompt:', prompt);
 
     try {
-      console.log('Calling Mistral chat.complete...');
-      const completion = await mistral.chat.complete({
-        model: 'mistral-large-latest',
+      console.log('Calling Perplexity for web search...');
+      const completion = await perplexity.chat.completions.create({
+        model: 'sonar',
         messages: [
-          { role: 'system', content: 'You are a financial data researcher. Always respond with valid JSON only.' },
+          { role: 'system', content: 'You are a real-time web researcher with access to current websites. Always visit actual bank websites to get current rates. Never use cached data.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.1,
-        maxTokens: 500,
+        stream: false,
       });
 
       const rawContent = completion.choices?.[0]?.message?.content;
@@ -101,9 +103,9 @@ Respond with JSON:
         return [];
       }
     } catch (err) {
-      console.error('Error during Mistral AI call:', err);
+      console.error('Error during Perplexity AI call:', err);
       if (err && (err as any).stack) {
-        console.error('Mistral error stack:', (err as any).stack);
+        console.error('Perplexity error stack:', (err as any).stack);
       }
       throw err;
     }

@@ -1,5 +1,8 @@
-import axios from 'axios';
-import * as cheerio from 'cheerio';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+
+// Add stealth plugin to bypass Cloudflare
+puppeteer.use(StealthPlugin());
 
 interface RateFeedItem {
   bankName: string;
@@ -10,110 +13,150 @@ interface RateFeedItem {
 }
 
 /**
- * Parse Bankrate RSS feeds for current rate information
- * Fallback data source when AI searches fail
+ * Use Puppeteer to bypass Cloudflare and scrape Bankrate
  */
 export async function fetchBankrateRSSData(): Promise<RateFeedItem[]> {
   const rates: RateFeedItem[] = [];
+  let browser;
   
   try {
-    // Bankrate's savings rates page (they don't have a direct RSS, so we scrape their rate table)
-    const savingsUrl = 'https://www.bankrate.com/banking/savings/rates/';
-    const response = await axios.get(savingsUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      timeout: 10000
+    console.log('Launching browser for Bankrate scraping...');
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     
-    const $ = cheerio.load(response.data);
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
-    // Parse Bankrate's rate comparison table
-    $('table tr, .rate-table tr, [class*="rate"] tr').each((i, elem) => {
-      try {
-        const $row = $(elem);
-        const text = $row.text().toLowerCase();
+    const url = 'https://www.bankrate.com/banking/savings/rates/';
+    console.log('Navigating to Bankrate...');
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    
+    // Wait for content to load
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Extract rate data from the page
+    const scrapedRates = await page.evaluate(() => {
+      const results: any[] = [];
+      
+      // Look for rate tables and structured data
+      document.querySelectorAll('tr, [class*="rate"], [class*="bank"]').forEach((elem) => {
+        const text = elem.textContent || '';
+        const lowerText = text.toLowerCase();
         
-        // Look for bank names and APY values
-        const bankMatch = text.match(/(marcus|ally|synchrony|discover|capital one|american express|cit bank|barclays|citizens access)/i);
+        // Match bank names
+        const bankMatch = lowerText.match(/(marcus|ally|synchrony|discover|capital one|american express|cit bank|barclays|citizens)/i);
+        // Match APY values
         const apyMatch = text.match(/(\d+\.\d+)%?\s*(?:apy|rate)/i);
         
         if (bankMatch && apyMatch) {
           const apy = parseFloat(apyMatch[1]);
-          if (apy > 0 && apy < 20) { // Sanity check
-            rates.push({
+          if (apy > 0 && apy < 20) {
+            results.push({
               bankName: bankMatch[1],
-              accountType: 'savings',
-              apy,
-              sourceUrl: savingsUrl,
-              pubDate: new Date()
+              apy: apy
             });
           }
         }
-      } catch (err) {
-        // Skip rows that don't parse
-      }
+      });
+      
+      return results;
     });
     
-    console.log(`Fetched ${rates.length} rates from Bankrate RSS`);
-    return rates;
+    // Convert to RateFeedItem format
+    scrapedRates.forEach(item => {
+      rates.push({
+        bankName: item.bankName,
+        accountType: 'savings',
+        apy: item.apy,
+        sourceUrl: url,
+        pubDate: new Date()
+      });
+    });
+    
+    console.log(`✓ Scraped ${rates.length} rates from Bankrate using Puppeteer`);
     
   } catch (error) {
-    console.error('Error fetching Bankrate data:', error);
-    return rates;
+    console.error('Puppeteer Bankrate scraping error:', error);
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
+  
+  return rates;
 }
 
 /**
- * Fetch from NerdWallet's rate comparison page
+ * Use Puppeteer to bypass Cloudflare and scrape NerdWallet
  */
 export async function fetchNerdWalletData(): Promise<RateFeedItem[]> {
   const rates: RateFeedItem[] = [];
+  let browser;
   
   try {
-    const url = 'https://www.nerdwallet.com/best/banking/high-yield-online-savings-accounts';
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      timeout: 10000
+    console.log('Launching browser for NerdWallet scraping...');
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     
-    const $ = cheerio.load(response.data);
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
-    // Parse NerdWallet's structured rate data
-    $('[class*="product"], [class*="bank"], article').each((i, elem) => {
-      try {
-        const $elem = $(elem);
-        const text = $elem.text();
+    const url = 'https://www.nerdwallet.com/best/banking/high-yield-online-savings-accounts';
+    console.log('Navigating to NerdWallet...');
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    
+    // Wait for content to load
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Extract rate data
+    const scrapedRates = await page.evaluate(() => {
+      const results: any[] = [];
+      
+      document.querySelectorAll('[class*="product"], [class*="bank"], article').forEach((elem) => {
+        const text = elem.textContent || '';
         
-        const bankMatch = text.match(/(Marcus|Ally|Synchrony|Discover|Capital One|American Express|CIT Bank|Barclays|Citizens Access)/i);
+        const bankMatch = text.match(/(Marcus|Ally|Synchrony|Discover|Capital One|American Express|CIT Bank|Barclays|Citizens)/i);
         const apyMatch = text.match(/(\d+\.\d+)%?\s*(?:APY|apy)/i);
         
         if (bankMatch && apyMatch) {
           const apy = parseFloat(apyMatch[1]);
           if (apy > 0 && apy < 20) {
-            rates.push({
+            results.push({
               bankName: bankMatch[1],
-              accountType: 'savings',
-              apy,
-              sourceUrl: url,
-              pubDate: new Date()
+              apy: apy
             });
           }
         }
-      } catch (err) {
-        // Skip elements that don't parse
-      }
+      });
+      
+      return results;
     });
     
-    console.log(`Fetched ${rates.length} rates from NerdWallet`);
-    return rates;
+    scrapedRates.forEach(item => {
+      rates.push({
+        bankName: item.bankName,
+        accountType: 'savings',
+        apy: item.apy,
+        sourceUrl: url,
+        pubDate: new Date()
+      });
+    });
+    
+    console.log(`✓ Scraped ${rates.length} rates from NerdWallet using Puppeteer`);
     
   } catch (error) {
-    console.error('Error fetching NerdWallet data:', error);
-    return rates;
+    console.error('Puppeteer NerdWallet scraping error:', error);
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
+  
+  return rates;
 }
 
 /**

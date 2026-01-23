@@ -1,5 +1,6 @@
 import Perplexity from '@perplexity-ai/perplexity_ai';
 import { fetchRSSFallbackRates } from './rssFeedService.js';
+import { getBankRateUrl } from '../config/bankRateUrls.js';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
@@ -14,28 +15,37 @@ const client = new Perplexity({
 export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }: { bankName?: string; accountType?: string; zipCode?: string }): Promise<any[]> {
   const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   
-  // Enhanced prompt to force checking actual bank websites
+  // Get the specific URL for this bank and account type
+  const specificUrl = bankName ? getBankRateUrl(bankName, accountType as any) : null;
+  
+  // Enhanced prompt with specific URL if available
+  const urlInstruction = specificUrl 
+    ? `\n\nIMPORTANT: Go DIRECTLY to this URL where they publish their ${accountType} rates:\n${specificUrl}\n\nDo NOT go to the homepage. Go to the URL above and read the current rate from that page.`
+    : `\n\nFind and navigate to ${bankName}'s ${accountType} rates page (usually at /savings, /checking, or /cd).`;
+  
   const prompt = `IMPORTANT: You must visit the ACTUAL bank website to get the CURRENT ${currentDate} rate. Do not use cached or training data.
 
 TASK: Visit ${bankName}'s official website RIGHT NOW and find their current ${accountType} account APY as displayed on their site TODAY (${currentDate}).
+${urlInstruction}
 
 REQUIRED STEPS:
-1. Go directly to the official ${bankName} website
-2. Navigate to their ${accountType} accounts page
-3. Read the EXACT current APY shown on the page
-4. Verify this is their ${currentDate} rate, not an old rate
+1. Go directly to the specific rates page (URL provided above if available)
+2. Find the EXACT current APY shown on the page TODAY
+3. Read the minimum deposit requirement
+4. Note any important features or requirements
+5. Copy the exact URL where you found this information
 
 Bank: ${bankName}
 Account Type: ${accountType}
 Today's Date: ${currentDate}
 
 Provide:
-- The EXACT APY shown on their website TODAY
+- The EXACT APY shown on their website TODAY (not an old rate)
 - The specific URL where you found this rate
 - Minimum deposit requirement
 - Any important features or requirements
 
-If the website shows the rate as of ${currentDate}, state that clearly. If you can only find older data, explicitly state that and provide the date of that data.`;
+If the rate page shows "as of [date]", include that date. If you can only find older data, explicitly state that and provide the date of that data.`;
 
   try {
     const response = await client.chat.completions.create({
@@ -96,9 +106,9 @@ If the website shows the rate as of ${currentDate}, state that clearly. If you c
     
     console.log(`Parsed ${bankName}: APY=${rateData.apy || 'N/A'}, URL=${rateData.sourceUrl || 'N/A'}`);
     
-    // FALLBACK: If Perplexity didn't find reliable data, try RSS feeds
+    // FALLBACK: If Perplexity didn't find reliable data, try Puppeteer scraping
     if (!rateData.apy || !rateData.sourceUrl || rateData.rateInfo.includes('⚠️')) {
-      console.log(`⚠️ Perplexity data unreliable for ${bankName}, trying RSS fallback...`);
+      console.log(`⚠️ Perplexity data unreliable for ${bankName}, trying Puppeteer fallback...`);
       try {
         const rssFallbackRates = await fetchRSSFallbackRates();
         const fallbackRate = rssFallbackRates.find(
@@ -109,15 +119,15 @@ If the website shows the rate as of ${currentDate}, state that clearly. If you c
         );
         
         if (fallbackRate) {
-          console.log(`✓ Found RSS fallback rate for ${bankName}: ${fallbackRate.apy}%`);
+          console.log(`✓ Found Puppeteer fallback rate for ${bankName}: ${fallbackRate.apy}%`);
           rateData.apy = fallbackRate.apy;
           rateData.rate = fallbackRate.apy;
           rateData.sourceUrl = fallbackRate.sourceUrl;
-          rateData.dataFreshness = 'rss-feed';
+          rateData.dataFreshness = 'puppeteer-scraped';
           rateData.rateInfo = `Rate from Bankrate/NerdWallet (${new Date().toLocaleDateString()})`;
         }
       } catch (fallbackError) {
-        console.error('RSS fallback also failed:', fallbackError);
+        console.error('Puppeteer fallback also failed:', fallbackError);
       }
     }
     

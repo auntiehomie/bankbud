@@ -81,9 +81,24 @@ const startServer = async () => {
         console.log(`Updating ${accountType} rates...`);
         const results = await searchRatesAndDistancesForBanks(accountType);
         
-        // Update database with fresh rates
+        // Update database with fresh rates using shared utility
         for (const result of results) {
           if (result.rate && result.rate.apy) {
+            const rateInfo = result.rate.rateInfo || '';
+            const features = [];
+            
+            // Extract features from rate info if available
+            if (rateInfo) {
+              features.push(rateInfo.substring(0, 100));
+            }
+            
+            // Add service model as a feature
+            if (result.serviceModel === 'online') {
+              features.push('Online Banking');
+            } else if (result.serviceModel === 'branch') {
+              features.push('Branch Banking');
+            }
+            
             await BankRate.findOneAndUpdate(
               { bankName: result.bankName, accountType },
               {
@@ -92,16 +107,13 @@ const startServer = async () => {
                 rate: result.rate.apy,
                 apy: result.rate.apy,
                 minDeposit: 0,
-                features: result.rate.rateInfo ? [result.rate.rateInfo.substring(0, 100)] : [],
+                features,
                 verifications: 0,
                 reports: 0,
                 lastVerified: new Date(),
                 availability: result.serviceModel === 'online' ? 'national' : 'regional',
                 dataSource: 'api',
                 scrapedUrl: result.rate.sourceUrl || '',
-                phone: result.phone,
-                institutionType: result.type,
-                serviceModel: result.serviceModel,
                 lastScraped: new Date()
               },
               { upsert: true, new: true }
