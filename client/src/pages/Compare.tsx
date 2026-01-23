@@ -705,6 +705,26 @@ function RateCard({
           <div className="rate-notice">
             <strong>⚠️ AI-Generated Rate:</strong> This rate was found using AI search and may not be current. 
             Always verify by calling the bank or visiting their website.
+            {rate.rateInfo && (
+              <details style={{ marginTop: '0.75rem' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 500, color: '#666' }}>
+                  View AI Response
+                </summary>
+                <div style={{ 
+                  marginTop: '0.5rem', 
+                  padding: '0.75rem', 
+                  background: '#f8f9fa', 
+                  borderRadius: '4px',
+                  fontSize: '0.9rem',
+                  color: '#333',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '300px',
+                  overflowY: 'auto'
+                }}>
+                  {rate.rateInfo}
+                </div>
+              </details>
+            )}
           </div>
         )}
         
