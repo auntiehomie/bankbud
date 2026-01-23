@@ -18,7 +18,7 @@ export default function Header() {
           </Link>
           <Link to="/ai-advisor" className="nav-link">
             <MessageCircle size={20} />
-            <span>AI Advisor</span>
+            <span>BankBud Chat</span>
           </Link>
           <Link to="/news" className="nav-link">
             <Newspaper size={20} />

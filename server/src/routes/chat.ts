@@ -72,15 +72,15 @@ router.delete('/history/:sessionId', async (req: Request, res: Response) => {
   }
 });
 
-// Get AI advisor status
+// Get BankBud status
 router.get('/status', (req: Request, res: Response) => {
   const isConfigured = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here');
   
   res.json({
     available: isConfigured,
     message: isConfigured 
-      ? 'AI Advisor is ready to help!' 
-      : 'AI Advisor requires OpenAI API key configuration'
+      ? 'BankBud is ready to help!' 
+      : 'BankBud requires API key configuration'
   });
 });
 
