@@ -105,6 +105,7 @@ router.post('/', async (req: Request, res: Response) => {
       features,
       source,
       notes,
+      dataSource: 'community', // Mark as community-submitted
       verifications: 1, // Auto-verify first submission
       lastVerified: new Date()
     });
