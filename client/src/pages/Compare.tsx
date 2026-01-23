@@ -361,6 +361,16 @@ export default function Compare() {
             </select>
           </div>
 
+          <div className="filter-group">
+            <Filter size={20} />
+            <label>Data Source:</label>
+            <select value={dataSourceFilter} onChange={(e) => setDataSourceFilter(e.target.value as 'all' | 'community' | 'ai')}>
+              <option value="all">All Sources</option>
+              <option value="community">Community Submitted</option>
+              <option value="ai">AI Generated</option>
+            </select>
+          </div>
+
           <div className="filter-group location-search">
             <label>Zip Code (optional):</label>
             <input
