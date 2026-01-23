@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import BankRate from '../models/BankRate.js';
 import { sendRateSubmissionEmail, sendRateReportEmail } from '../services/emailService.js';
+import { searchRatesAndDistancesForBanks } from '../services/bankBatchService.js';
 
 const router = Router();
 
@@ -211,6 +212,71 @@ router.delete('/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting rate:', error);
     res.status(500).json({ error: 'Failed to delete rate' });
+  }
+});
+
+// Manual refresh endpoint - triggers database update with latest rates
+router.post('/refresh', async (req: Request, res: Response) => {
+  try {
+    console.log('🔄 Manual rate refresh triggered...');
+    const accountTypes = ['savings', 'checking', 'cd'];
+    const updatedCounts = { savings: 0, checking: 0, cd: 0 };
+    
+    for (const accountType of accountTypes) {
+      console.log(`Updating ${accountType} rates...`);
+      const results = await searchRatesAndDistancesForBanks(accountType);
+      
+      // Update database with fresh rates
+      for (const result of results) {
+        if (result.rate && result.rate.apy) {
+          const rateInfo = result.rate.rateInfo || '';
+          const features = [];
+          
+          // Extract features from rate info if available
+          if (rateInfo) {
+            features.push(rateInfo.substring(0, 100));
+          }
+          
+          // Add service model as a feature
+          if (result.serviceModel === 'online') {
+            features.push('Online Banking');
+          } else if (result.serviceModel === 'branch') {
+            features.push('Branch Banking');
+          }
+          
+          await BankRate.findOneAndUpdate(
+            { bankName: result.bankName, accountType },
+            {
+              bankName: result.bankName,
+              accountType,
+              rate: result.rate.apy,
+              apy: result.rate.apy,
+              minDeposit: 0,
+              features,
+              verifications: 0,
+              reports: 0,
+              lastVerified: new Date(),
+              availability: result.serviceModel === 'online' ? 'national' : 'regional',
+              dataSource: 'api',
+              scrapedUrl: result.rate.sourceUrl || '',
+              lastScraped: new Date()
+            },
+            { upsert: true, new: true }
+          );
+          updatedCounts[accountType as keyof typeof updatedCounts]++;
+        }
+      }
+      console.log(`✅ Updated ${updatedCounts[accountType as keyof typeof updatedCounts]} ${accountType} rates`);
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Rates refreshed successfully',
+      updated: updatedCounts
+    });
+  } catch (error) {
+    console.error('❌ Manual rate refresh failed:', error);
+    res.status(500).json({ error: 'Failed to refresh rates' });
   }
 });
 

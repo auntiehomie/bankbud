@@ -61,8 +61,10 @@ export async function searchAndExtractRates(
           ? rawContent.map((chunk: any) => chunk.text || '').join('') 
           : '';
       
-      // Log the raw AI response
-      console.log('AI Search Response:', text);
+      // Log the full AI response for debugging
+      console.log(`\n📝 Full Perplexity response for ${bankName}:`);
+      console.log(text);
+      console.log('---');
 
       // Parse JSON from response
       const jsonMatch = text.match(/\{[\s\S]*?\}(?=\s*$)/);

@@ -45,6 +45,11 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
       return [];
     }
     
+    // Log full response for debugging
+    console.log(`\n📝 Full Perplexity response for ${bankName}:`);
+    console.log(text);
+    console.log('---');
+    
     // Parse the text response to extract rate information
     const rateData: any = {
       bankName: bankName,
@@ -85,29 +90,11 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     
     console.log(`Parsed ${bankName}: APY=${rateData.apy || 'N/A'}, URL=${rateData.sourceUrl || 'N/A'}`);
     
-    // FALLBACK: If Perplexity didn't find reliable data, try Puppeteer scraping
+    // FALLBACK: Disabled Puppeteer on Render (Chrome not available)
+    // Only use Perplexity data
     if (!rateData.apy || !rateData.sourceUrl || rateData.rateInfo.includes('⚠️')) {
-      console.log(`⚠️ Perplexity data unreliable for ${bankName}, trying Puppeteer fallback...`);
-      try {
-        const rssFallbackRates = await fetchRSSFallbackRates();
-        const fallbackRate = rssFallbackRates.find(
-          r => bankName && (
-            r.bankName.toLowerCase().includes(bankName.toLowerCase()) || 
-            bankName.toLowerCase().includes(r.bankName.toLowerCase())
-          )
-        );
-        
-        if (fallbackRate) {
-          console.log(`✓ Found Puppeteer fallback rate for ${bankName}: ${fallbackRate.apy}%`);
-          rateData.apy = fallbackRate.apy;
-          rateData.rate = fallbackRate.apy;
-          rateData.sourceUrl = fallbackRate.sourceUrl;
-          rateData.dataFreshness = 'puppeteer-scraped';
-          rateData.rateInfo = `Rate from Bankrate/NerdWallet (${new Date().toLocaleDateString()})`;
-        }
-      } catch (fallbackError) {
-        console.error('Puppeteer fallback also failed:', fallbackError);
-      }
+      console.log(`⚠️ Perplexity data unreliable for ${bankName} - no fallback available on Render`);
+      // Could not get reliable data, but return what we have
     }
     
     // Add warning in rateInfo if no URL was found (suggests data may be unreliable)
