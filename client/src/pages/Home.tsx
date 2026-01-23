@@ -71,8 +71,8 @@ export default function Home() {
           <div className="hero-features">
             <div className="feature-card">
               <MessageCircle size={48} />
-              <h3>AI Advisor</h3>
-              <p>Chat with our AI to get personalized banking advice</p>
+              <h3>BankBud Chat</h3>
+              <p>Chat with BankBud to get personalized banking advice</p>
             </div>
             
             <div className="feature-card">
@@ -91,7 +91,7 @@ export default function Home() {
           <div className="hero-actions">
             <Link to="/ai-advisor" className="btn btn-primary btn-large">
               <MessageCircle size={20} />
-              Chat with AI Advisor
+              Chat with BankBud
             </Link>
             <Link to="/compare" className="btn btn-outline btn-large">
               Compare Rates
