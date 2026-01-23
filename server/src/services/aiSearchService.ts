@@ -38,42 +38,17 @@ export async function searchAndExtractRates(
     
     // Get specific URL for this bank if available
     const specificUrl = bankName ? getBankRateUrl(bankName, accountType as any) : null;
-    const urlInstruction = specificUrl 
-      ? `\n\nCRITICAL: Navigate DIRECTLY to this specific URL:\n${specificUrl}\n\nThis is where ${bankName} publishes their ${accountType} rates. Read the rate from this exact page.`
-      : '';
     
-    const prompt = `CRITICAL: You MUST visit the actual ${bankName || 'bank'} website RIGHT NOW to get current ${currentDate} rates.
-
-TASK: Go to ${bankName ? `${bankName}'s official website` : 'top bank websites'} and find the CURRENT ${accountType} account APY as shown on their site TODAY (${currentDate}).
-${urlInstruction}
-
-REQUIRED:
-1. Visit the official bank website directly${specificUrl ? ' at the URL provided above' : ''}
-2. Find the EXACT current APY displayed today
-3. Get the minimum deposit requirement
-4. Note any important features
-5. Provide the direct URL where you found this rate
-
-Respond ONLY with valid JSON:
-{
-  "bankName": "",
-  "accountType": "${accountType}",
-  "apy": 0.00,
-  "rate": 0.00,
-  "minDeposit": 0,
-  "features": [],
-  "sourceUrl": "",
-  "lastUpdated": "${currentDate}",
-  "confidence": "high|medium|low",
-  "notes": ""
-}`;
+    // Simple, natural question format
+    const prompt = specificUrl
+      ? `What is the current ${accountType} APY at ${specificUrl}?`
+      : `What is ${bankName}'s current ${accountType} account APY? Check their official website.`;
 
     try {
       console.log('Calling Perplexity for web search...');
       const completion = await perplexity.chat.completions.create({
         model: 'sonar',
         messages: [
-          { role: 'system', content: 'You are a real-time web researcher with access to current websites. Always visit actual bank websites to get current rates. Never use cached data.' },
           { role: 'user', content: prompt }
         ],
         stream: false,

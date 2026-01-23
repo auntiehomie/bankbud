@@ -18,46 +18,25 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
   // Get the specific URL for this bank and account type
   const specificUrl = bankName ? getBankRateUrl(bankName, accountType as any) : null;
   
-  // Enhanced prompt with specific URL if available
-  const urlInstruction = specificUrl 
-    ? `\n\nIMPORTANT: Go DIRECTLY to this URL where they publish their ${accountType} rates:\n${specificUrl}\n\nDo NOT go to the homepage. Go to the URL above and read the current rate from that page.`
-    : `\n\nFind and navigate to ${bankName}'s ${accountType} rates page (usually at /savings, /checking, or /cd).`;
-  
-  const prompt = `IMPORTANT: You must visit the ACTUAL bank website to get the CURRENT ${currentDate} rate. Do not use cached or training data.
-
-TASK: Visit ${bankName}'s official website RIGHT NOW and find their current ${accountType} account APY as displayed on their site TODAY (${currentDate}).
-${urlInstruction}
-
-REQUIRED STEPS:
-1. Go directly to the specific rates page (URL provided above if available)
-2. Find the EXACT current APY shown on the page TODAY
-3. Read the minimum deposit requirement
-4. Note any important features or requirements
-5. Copy the exact URL where you found this information
-
-Bank: ${bankName}
-Account Type: ${accountType}
-Today's Date: ${currentDate}
-
-Provide:
-- The EXACT APY shown on their website TODAY (not an old rate)
-- The specific URL where you found this rate
-- Minimum deposit requirement
-- Any important features or requirements
-
-If the rate page shows "as of [date]", include that date. If you can only find older data, explicitly state that and provide the date of that data.`;
+  // Build focused query
+  const query = specificUrl 
+    ? `Visit ${specificUrl} - what is the current ${accountType} account APY shown on this page today?`
+    : `What is ${bankName}'s current ${accountType} account APY as of today ${currentDate}?`;
 
   try {
+    // Use chat completions with web search enabled
     const response = await client.chat.completions.create({
       model: 'sonar',
       messages: [
-        { role: 'system', content: 'You are a real-time web researcher. You MUST visit actual websites and provide current information as of today. Never use cached or training data for financial rates.' },
-        { role: 'user', content: prompt }
+        { 
+          role: 'user', 
+          content: query
+        }
       ],
-      stream: false
+      stream: false,
     });
     
-    // Perplexity SDK returns the answer in response.choices[0].message.content
+    // Extract response
     const content = response.choices?.[0]?.message?.content;
     const text = typeof content === 'string' ? content : '';
     
@@ -70,11 +49,11 @@ If the rate page shows "as of [date]", include that date. If you can only find o
     const rateData: any = {
       bankName: bankName,
       accountType: accountType,
-      sourceUrl: '',
+      sourceUrl: specificUrl || '',
       rateInfo: text.substring(0, 500), // Store first 500 chars for display
       apy: null,
       rate: null,
-      dataFreshness: 'ai-generated',
+      dataFreshness: 'perplexity-search',
       lastChecked: new Date().toISOString()
     };
     
