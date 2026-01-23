@@ -55,7 +55,8 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
       bankName: bankName,
       accountType: accountType,
       sourceUrl: specificUrl || '',
-      rateInfo: text.substring(0, 500), // Store first 500 chars for display
+      rateInfo: text, // Store full response
+      fullResponse: text, // Keep full text for display
       apy: null,
       rate: null,
       dataFreshness: 'perplexity-search',
