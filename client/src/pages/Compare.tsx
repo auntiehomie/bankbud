@@ -10,6 +10,7 @@ export default function Compare() {
   const { rates, setRates, loading, setLoading, error, setError } = useStore();
   const [accountType, setAccountType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'rate' | 'verifications'>('rate');
+  const [dataSourceFilter, setDataSourceFilter] = useState<'all' | 'community' | 'ai'>('all');
   const [filteredRates, setFilteredRates] = useState<BankRate[]>([]);
   const [recentRates, setRecentRates] = useState<BankRate[]>([]);
   const [zipCode, setZipCode] = useState<string>('');
@@ -41,7 +42,7 @@ export default function Compare() {
   useEffect(() => {
     filterAndSortRates();
     getRecentSubmissions();
-  }, [rates, accountType, sortBy]);
+  }, [rates, accountType, sortBy, dataSourceFilter]);
 
   const getCacheKey = (type: string) => {
     return type === 'all' ? CACHE_KEY : `${CACHE_KEY}_${type}`;
@@ -148,6 +149,13 @@ export default function Compare() {
     let filtered = accountType === 'all' 
       ? rates 
       : rates.filter(r => r.accountType === accountType);
+
+    // Filter by data source
+    if (dataSourceFilter === 'community') {
+      filtered = filtered.filter(rate => rate.dataSource === 'community');
+    } else if (dataSourceFilter === 'ai') {
+      filtered = filtered.filter(rate => rate.dataSource === 'api' || rate.dataSource === 'scraped');
+    }
 
     filtered.sort((a, b) => {
       if (sortBy === 'rate') {
