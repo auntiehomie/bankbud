@@ -115,6 +115,21 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
     const { zipCode, accountType, latitude, longitude } = req.body;
     console.log('Received zipCode:', zipCode, 'accountType:', accountType, 'coords:', latitude, longitude);
     
+    // Get community rates from database
+    const BankRate = (await import('../models/BankRate.js')).default;
+    const dbFilter: any = {
+      dataSource: 'community'
+    };
+    if (accountType && accountType !== 'all') {
+      dbFilter.accountType = accountType;
+    }
+    
+    const communityRates = await BankRate.find(dbFilter)
+      .sort({ apy: -1, verifications: -1 })
+      .lean();
+    
+    console.log(`Found ${communityRates.length} community rates in database`);
+    
     // Use batch search for core banks
     console.log('Using batch search for core banks');
     const results = await searchRatesAndDistancesForBanks(
@@ -124,7 +139,7 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
       longitude
     );
     
-    // Format results to match BankRate interface expected by frontend
+    // Format AI results to match BankRate interface expected by frontend
     const formattedRates = results
       .filter(r => r.rate)
       .map((r, index) => ({
@@ -153,6 +168,7 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
         availability: r.serviceModel === 'online' ? 'national' as const : 'regional' as const,
         dataSource: 'api' as const,
         scrapedUrl: r.rate.sourceUrl || '',
+        rateInfo: r.rate.rateInfo || '',
         phone: r.phone,
         distance: r.distanceKm,
         branchAddress: r.branchAddress,
@@ -160,17 +176,22 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
         updatedAt: new Date().toISOString()
       }));
     
+    // Merge community rates with AI rates
+    const allRates = [...communityRates, ...formattedRates];
+    
     // Sort by distance if available, otherwise by rate
-    formattedRates.sort((a, b) => {
+    allRates.sort((a, b) => {
       if (a.distance !== undefined && b.distance !== undefined && a.distance !== null && b.distance !== null) {
         return a.distance - b.distance;
       }
       return (b.apy || 0) - (a.apy || 0);
     });
     
+    console.log(`Returning ${allRates.length} total rates (${communityRates.length} community + ${formattedRates.length} AI)`);
+    
     return res.json({ 
-      message: `Perplexity AI searched for rates from core banks`,
-      rates: formattedRates
+      message: `Found ${communityRates.length} community rates and ${formattedRates.length} AI rates`,
+      rates: allRates
     });
   } catch (error) {
     console.error('Error in AI bank search:', error);
