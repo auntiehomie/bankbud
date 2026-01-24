@@ -761,20 +761,23 @@ function RateCard({
             <strong>⚠️ AI-Generated Rate:</strong> This rate was found using AI search and may not be current. 
             Always verify by calling the bank or visiting their website.
             {rate.rateInfo && (
-              <details style={{ marginTop: '0.75rem' }}>
-                <summary style={{ cursor: 'pointer', fontWeight: 500, color: '#666' }}>
-                  View AI Response
+              <details style={{ marginTop: '0.75rem' }} open>
+                <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#4a5568', marginBottom: '0.5rem' }}>
+                  📝 Full AI Response (Click to collapse)
                 </summary>
                 <div style={{ 
                   marginTop: '0.5rem', 
-                  padding: '0.75rem', 
+                  padding: '1rem', 
                   background: '#f8f9fa', 
-                  borderRadius: '4px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
                   fontSize: '0.9rem',
-                  color: '#333',
+                  color: '#2d3748',
                   whiteSpace: 'pre-wrap',
-                  maxHeight: '300px',
-                  overflowY: 'auto'
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  lineHeight: '1.6',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   {rate.rateInfo}
                 </div>

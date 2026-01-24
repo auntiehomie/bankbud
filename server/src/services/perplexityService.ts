@@ -41,6 +41,14 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     const content = response.choices?.[0]?.message?.content;
     const text = typeof content === 'string' ? content : '';
     
+    // Get citations if available
+    const citations = response.citations || [];
+    const citationText = citations.length > 0 
+      ? `\n\n📚 Sources:\n${citations.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n')}`
+      : '';
+    
+    const fullResponseText = text + citationText;
+    
     if (!text) {
       console.error('No response from Perplexity');
       return [];
@@ -48,7 +56,8 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     
     // Log full response for debugging
     console.log(`\n📝 Full Perplexity response for ${bankName}:`);
-    console.log(text);
+    console.log(fullResponseText);
+    console.log(`📊 Citations: ${citations.length} found`);
     console.log('---');
     
     // Parse the text response to extract rate information
@@ -56,8 +65,8 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
       bankName: bankName,
       accountType: accountType,
       sourceUrl: specificUrl || '',
-      rateInfo: text, // Store full response
-      fullResponse: text, // Keep full text for display
+      rateInfo: fullResponseText, // Store full response with citations
+      fullResponse: fullResponseText, // Keep full text for display
       apy: null,
       rate: null,
       dataFreshness: 'perplexity-search',
