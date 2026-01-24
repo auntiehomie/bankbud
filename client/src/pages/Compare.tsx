@@ -123,6 +123,9 @@ export default function Compare() {
         userLocation?.latitude, 
         userLocation?.longitude
       );
+      console.log('📊 Loaded rates:', data.length);
+      console.log('📊 Community rates:', data.filter(r => r.dataSource === 'community').length);
+      console.log('📊 First 3 rates:', data.slice(0, 3).map(r => ({ bank: r.bankName, source: r.dataSource })));
       setRates(data);
       
       // Cache the data
@@ -151,15 +154,23 @@ export default function Compare() {
       ? rates 
       : rates.filter(r => r.accountType === accountType);
 
+    console.log('🔍 Filtering - Total rates:', rates.length);
+    console.log('🔍 After account type filter:', filtered.length);
+    console.log('🔍 Show community only:', showCommunityOnly);
+    console.log('🔍 Data source filter:', dataSourceFilter);
+
     // Toggle for community only
     if (showCommunityOnly) {
       filtered = filtered.filter(rate => rate.dataSource === 'community');
+      console.log('🔍 After community toggle:', filtered.length);
     }
     // Filter by data source dropdown (only if toggle is off)
     else if (dataSourceFilter === 'community') {
       filtered = filtered.filter(rate => rate.dataSource === 'community');
+      console.log('🔍 After community dropdown:', filtered.length);
     } else if (dataSourceFilter === 'ai') {
       filtered = filtered.filter(rate => rate.dataSource === 'api' || rate.dataSource === 'scraped');
+      console.log('🔍 After AI filter:', filtered.length);
     }
 
     filtered.sort((a, b) => {

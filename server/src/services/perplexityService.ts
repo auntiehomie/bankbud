@@ -1,6 +1,7 @@
 import Perplexity from '@perplexity-ai/perplexity_ai';
 import { fetchRSSFallbackRates } from './rssFeedService.js';
 import { getBankRateUrl } from '../config/bankRateUrls.js';
+import { scrapeBankRate } from './scraperApiService.js';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
@@ -91,9 +92,28 @@ export async function searchBankRatesWithPerplexity({ bankName, accountType = 's
     
     console.log(`Parsed ${bankName}: APY=${rateData.apy || 'N/A'}, URL=${rateData.sourceUrl || 'N/A'}`);
     
-    // FALLBACK: If Perplexity didn't find reliable data, try Puppeteer scraping
+    // FALLBACK 1: If Perplexity didn't find reliable data, try ScraperAPI direct scraping
+    if ((!rateData.apy || !rateData.sourceUrl || rateData.rateInfo.includes('⚠️')) && specificUrl) {
+      console.log(`⚠️ Perplexity data unreliable for ${bankName}, trying ScraperAPI fallback...`);
+      try {
+        const scraperResult = await scrapeBankRate(specificUrl, bankName || 'Unknown', accountType);
+        if (scraperResult.apy) {
+          console.log(`✓ ScraperAPI found rate for ${bankName}: ${scraperResult.apy}%`);
+          rateData.apy = scraperResult.apy;
+          rateData.rate = scraperResult.apy;
+          rateData.sourceUrl = scraperResult.sourceUrl;
+          rateData.dataFreshness = 'scraperapi-direct';
+          rateData.rateInfo = scraperResult.rateInfo;
+          return [rateData];
+        }
+      } catch (scraperError: any) {
+        console.error('ScraperAPI fallback failed:', scraperError.message);
+      }
+    }
+    
+    // FALLBACK 2: If ScraperAPI failed, try Puppeteer scraping
     if (!rateData.apy || !rateData.sourceUrl || rateData.rateInfo.includes('⚠️')) {
-      console.log(`⚠️ Perplexity data unreliable for ${bankName}, trying Puppeteer fallback...`);
+      console.log(`⚠️ ScraperAPI failed for ${bankName}, trying Puppeteer fallback...`);
       try {
         const rssFallbackRates = await fetchRSSFallbackRates();
         const fallbackRate = rssFallbackRates.find(
