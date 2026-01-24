@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Filter, TrendingUp, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Filter, TrendingUp, CheckCircle, AlertCircle, X, Users } from 'lucide-react';
 import { api } from '../utils/api';
 import { BankRate } from '../types';
 import { useStore } from '../store';
@@ -11,6 +11,7 @@ export default function Compare() {
   const [accountType, setAccountType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'rate' | 'verifications'>('rate');
   const [dataSourceFilter, setDataSourceFilter] = useState<'all' | 'community' | 'ai'>('all');
+  const [showCommunityOnly, setShowCommunityOnly] = useState(false);
   const [filteredRates, setFilteredRates] = useState<BankRate[]>([]);
   const [recentRates, setRecentRates] = useState<BankRate[]>([]);
   const [zipCode, setZipCode] = useState<string>('');
@@ -42,7 +43,7 @@ export default function Compare() {
   useEffect(() => {
     filterAndSortRates();
     getRecentSubmissions();
-  }, [rates, accountType, sortBy, dataSourceFilter]);
+  }, [rates, accountType, sortBy, dataSourceFilter, showCommunityOnly]);
 
   const getCacheKey = (type: string) => {
     return type === 'all' ? CACHE_KEY : `${CACHE_KEY}_${type}`;
@@ -150,8 +151,12 @@ export default function Compare() {
       ? rates 
       : rates.filter(r => r.accountType === accountType);
 
-    // Filter by data source
-    if (dataSourceFilter === 'community') {
+    // Toggle for community only
+    if (showCommunityOnly) {
+      filtered = filtered.filter(rate => rate.dataSource === 'community');
+    }
+    // Filter by data source dropdown (only if toggle is off)
+    else if (dataSourceFilter === 'community') {
       filtered = filtered.filter(rate => rate.dataSource === 'community');
     } else if (dataSourceFilter === 'ai') {
       filtered = filtered.filter(rate => rate.dataSource === 'api' || rate.dataSource === 'scraped');
@@ -316,6 +321,27 @@ export default function Compare() {
           
           {rates.length > 0 && (
             <div className="header-actions">
+              <button 
+                className={`btn-toggle ${showCommunityOnly ? 'active' : ''}`}
+                onClick={() => setShowCommunityOnly(!showCommunityOnly)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  border: showCommunityOnly ? '2px solid var(--primary)' : '2px solid #ddd',
+                  borderRadius: '0.5rem',
+                  background: showCommunityOnly ? 'var(--primary)' : 'white',
+                  color: showCommunityOnly ? 'white' : '#666',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Users size={18} />
+                {showCommunityOnly ? 'Showing Community Only' : 'Show Community Only'}
+              </button>
               <div className="last-updated">
                 <span className="update-label">Rates updated as of:</span>
                 <span className="update-time">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
