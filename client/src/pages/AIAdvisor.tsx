@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, Trash2, Loader, Sparkles, TrendingUp, DollarSign } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { api } from '../utils/api';
 import { ChatMessage } from '../types';
 import './AIAdvisor.css';
@@ -199,7 +200,9 @@ export default function AIAdvisor() {
                   )}
                 </div>
                 <div className="message-content">
-                  <div className="message-text">{message.content}</div>
+                  <div className="message-text">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
                   <div className="message-time">
                     {new Date(message.timestamp).toLocaleTimeString([], { 
                       hour: '2-digit', 
