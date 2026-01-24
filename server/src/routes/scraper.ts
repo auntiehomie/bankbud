@@ -180,9 +180,12 @@ router.post('/ai-search-bank', async (req: Request, res: Response) => {
     const allRates = [...communityRates, ...formattedRates];
     
     // Sort by distance if available, otherwise by rate
-    allRates.sort((a, b) => {
-      if (a.distance !== undefined && b.distance !== undefined && a.distance !== null && b.distance !== null) {
-        return a.distance - b.distance;
+    allRates.sort((a: any, b: any) => {
+      const aDistance = a.distance ?? null;
+      const bDistance = b.distance ?? null;
+      
+      if (aDistance !== null && bDistance !== null) {
+        return aDistance - bDistance;
       }
       return (b.apy || 0) - (a.apy || 0);
     });
