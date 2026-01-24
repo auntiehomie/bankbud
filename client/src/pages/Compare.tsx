@@ -756,6 +756,14 @@ function RateCard({
       </div>
 
       <div className="rate-card-body">
+        {/* Auto-flagged rates warning */}
+        {rate.reports > rate.verifications && (
+          <div className="rate-notice" style={{ borderLeft: '4px solid #e53e3e', background: '#fff5f5' }}>
+            <strong>⚠️ Flagged Rate:</strong> This rate has been reported as potentially inaccurate and is under review. 
+            Verifications: {rate.verifications} | Reports: {rate.reports}
+          </div>
+        )}
+        
         {rate.dataSource === 'api' && (
           <div className="rate-notice">
             <strong>⚠️ AI-Generated Rate:</strong> This rate was found using AI search and may not be current. 

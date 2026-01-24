@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import BankRate from '../models/BankRate.js';
 import { sendRateSubmissionEmail, sendRateReportEmail } from '../services/emailService.js';
 import { searchRatesAndDistancesForBanks } from '../services/bankBatchService.js';
@@ -11,6 +12,9 @@ router.get('/', async (req: Request, res: Response) => {
     const { accountType, minRate, maxMinDeposit, zipCode, state } = req.query;
     
     const filter: any = {};
+    
+    // Hide rates with more reports than verifications (verification threshold)
+    filter.$expr = { $gte: ['$verifications', '$reports'] };
     
     if (accountType && accountType !== 'all') {
       filter.accountType = accountType;
@@ -73,8 +77,14 @@ router.get('/top', async (req: Request, res: Response) => {
   }
 });
 
-// Submit a new rate
-router.post('/', async (req: Request, res: Response) => {
+// Submit a new rate (with stricter rate limiting)
+const submitLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // limit each IP to 3 submissions per 15 minutes
+  message: 'Too many submissions from this IP, please try again later.'
+});
+
+router.post('/', submitLimiter, async (req: Request, res: Response) => {
   try {
     const {
       bankName,
@@ -95,19 +105,47 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
     
+    // Auto-flag suspiciously high rates
+    const apyValue = apy || rate;
+    let autoFlagged = false;
+    let flagReason = '';
+    
+    // Check if rate is unreasonably high (>15% APY)
+    if (apyValue > 15) {
+      autoFlagged = true;
+      flagReason = 'Auto-flagged: Rate exceeds 15% APY';
+      console.log(`⚠️ Auto-flagging ${bankName}: ${apyValue}% > 15%`);
+    } else {
+      // Check if rate is >2x the average for this account type
+      const avgRate = await BankRate.aggregate([
+        { $match: { accountType, dataSource: { $in: ['api', 'scraped'] } } },
+        { $group: { _id: null, avgApy: { $avg: '$apy' } } }
+      ]);
+      
+      if (avgRate.length > 0 && avgRate[0].avgApy) {
+        const average = avgRate[0].avgApy;
+        if (apyValue > average * 2) {
+          autoFlagged = true;
+          flagReason = `Auto-flagged: Rate is ${(apyValue / average).toFixed(1)}x higher than average (${average.toFixed(2)}%)`;
+          console.log(`⚠️ Auto-flagging ${bankName}: ${apyValue}% is ${(apyValue / average).toFixed(1)}x average`);
+        }
+      }
+    }
+    
     const newRate = new BankRate({
       bankName,
       accountType,
       rate,
-      apy: apy || rate,
+      apy: apyValue,
       minDeposit,
       term,
       features,
       source,
-      notes,
+      notes: autoFlagged ? `⚠️ ${flagReason}\n${notes || ''}`.trim() : notes,
       dataSource: 'community', // Mark as community-submitted
-      verifications: 1, // Auto-verify first submission
-      lastVerified: new Date()
+      verifications: autoFlagged ? 0 : 1, // Don't auto-verify flagged rates
+      reports: autoFlagged ? 1 : 0, // Auto-report suspicious rates
+      lastVerified: autoFlagged ? undefined : new Date()
     });
     
     await newRate.save();
