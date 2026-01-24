@@ -30,12 +30,19 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Routes
+console.log('📝 Registering routes...');
 app.use('/api/rates', ratesRouter);
+console.log('✓ Rates router registered');
 app.use('/api/recommendations', recommendationsRouter);
+console.log('✓ Recommendations router registered');
 app.use('/api/scraper', scraperRouter);
+console.log('✓ Scraper router registered');
 app.use('/api/benchmarks', benchmarksRouter);
+console.log('✓ Benchmarks router registered');
 app.use('/api/chat', chatRouter);
+console.log('✓ Chat router registered');
 app.use('/api/news', newsRouter);
+console.log('✓ News router registered');
 
 // Health check
 app.get('/api/health', (req, res) => {
