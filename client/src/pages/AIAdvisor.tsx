@@ -157,10 +157,16 @@ export default function AIAdvisor() {
   };
 
   const starterQuestions = [
-    "What's the best savings account right now?",
-    "I want to save $10,000. What should I do?",
+    "What's the best high-yield savings account right now?",
+    "I want to save $10,000 for a house. What should I do?",
     "What's the difference between a CD and savings account?",
-    "Help me build an emergency fund"
+    "Help me build a 6-month emergency fund",
+    "Should I open a money market account or savings account?",
+    "What are the best CD rates for 12 months?",
+    "How much should I keep in my checking account?",
+    "What's a good savings rate in 2026?",
+    "Are online banks safer than traditional banks?",
+    "How can I maximize my savings with $5,000?"
   ];
 
   return (
