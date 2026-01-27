@@ -11,6 +11,7 @@ import benchmarksRouter from './routes/benchmarks.js';
 import chatRouter from './routes/chat.js';
 import newsRouter from './routes/news.js';
 import adminRouter from './routes/admin.js';
+import adminAuthRouter from './routes/adminAuth.js';
 
 dotenv.config();
 
@@ -44,8 +45,10 @@ app.use('/api/chat', chatRouter);
 console.log('✓ Chat router registered');
 app.use('/api/news', newsRouter);
 console.log('✓ News router registered');
-app.use('/api/admin', adminRouter);
+app.use('/api/admin', adminAuthRouter);
 console.log('✓ Admin router registered');
+app.use('/api/admin-legacy', adminRouter);
+console.log('✓ Admin legacy router registered');
 
 // Health check
 app.get('/api/health', (req, res) => {

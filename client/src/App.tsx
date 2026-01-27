@@ -6,7 +6,7 @@ import Submit from './pages/Submit';
 import Recommendations from './pages/Recommendations';
 import AIAdvisor from './pages/AIAdvisor';
 import News from './pages/News';
-import Admin from './pages/Admin';
+import Admin from './pages/AdminNew';
 
 function App() {
   return (
