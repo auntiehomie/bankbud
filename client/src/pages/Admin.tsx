@@ -19,15 +19,6 @@ export default function Admin() {
   const [selectedRates, setSelectedRates] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const savedPassword = sessionStorage.getItem('adminPassword');
-    if (savedPassword) {
-      setPassword(savedPassword);
-      setIsAuthenticated(true);
-      loadData(savedPassword);
-    }
-  }, []);
-
-  useEffect(() => {
     if (isAuthenticated) {
       loadRates();
     }
@@ -100,7 +91,6 @@ export default function Admin() {
       });
 
       if (response.ok) {
-        sessionStorage.setItem('adminPassword', password);
         setIsAuthenticated(true);
         loadData(password);
       } else {
@@ -226,9 +216,9 @@ export default function Admin() {
         </div>
         <button 
           onClick={() => {
-            sessionStorage.removeItem('adminPassword');
             setIsAuthenticated(false);
             setPassword('');
+            setRates([]);
           }}
           className="btn btn-outline"
         >
