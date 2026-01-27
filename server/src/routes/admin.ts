@@ -34,14 +34,18 @@ const adminAuth = async (req: Request, res: Response, next: NextFunction) => {
 router.get('/password-exists', async (req: Request, res: Response) => {
   try {
     const storedPassword = await getStoredPassword();
+    // Only check env if it's explicitly set (not empty/undefined)
     const envPassword = process.env.ADMIN_PASSWORD;
+    const hasEnvPassword = envPassword && envPassword.length > 0;
     
-    // Only return true if there's an actual stored or env password (not relying on default)
-    const hasRealPassword = !!(storedPassword || envPassword);
+    // Only return true if there's an actual stored password or a real env password
+    const hasRealPassword = !!(storedPassword || hasEnvPassword);
+    
+    console.log('Password check:', { storedPassword: !!storedPassword, hasEnvPassword, hasRealPassword });
     
     res.json({ 
       exists: hasRealPassword,
-      source: storedPassword ? 'database' : (envPassword ? 'environment' : 'none')
+      source: storedPassword ? 'database' : (hasEnvPassword ? 'environment' : 'none')
     });
   } catch (error) {
     console.error('Error checking password existence:', error);

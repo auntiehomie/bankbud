@@ -3,7 +3,7 @@ import { Trash2, Shield, AlertTriangle, TrendingUp, Database } from 'lucide-reac
 import { BankRate } from '../types';
 import './Admin.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export default function Admin() {
   const [password, setPassword] = useState('');
