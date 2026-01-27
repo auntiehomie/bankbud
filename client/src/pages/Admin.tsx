@@ -13,6 +13,7 @@ export default function Admin() {
   const [isCreatingPassword, setIsCreatingPassword] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetKey, setResetKey] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
   const [rates, setRates] = useState<BankRate[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -42,6 +43,29 @@ export default function Admin() {
     } catch (err) {
       console.error('Error checking password:', err);
       setPasswordExists(true); // Assume password exists on error
+    }
+  };
+
+  const calculatePasswordStrength = (pwd: string): 'weak' | 'medium' | 'strong' => {
+    let strength = 0;
+    
+    if (pwd.length >= 8) strength++;
+    if (pwd.length >= 12) strength++;
+    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++;
+    if (/[0-9]/.test(pwd)) strength++;
+    if (/[^a-zA-Z0-9]/.test(pwd)) strength++;
+    
+    if (strength <= 2) return 'weak';
+    if (strength <= 3) return 'medium';
+    return 'strong';
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (value.length > 0) {
+      setPasswordStrength(calculatePasswordStrength(value));
+    } else {
+      setPasswordStrength(null);
     }
   };
 
@@ -145,7 +169,7 @@ export default function Admin() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password, overrideDefault: true })
       });
 
       if (response.ok) {
@@ -300,14 +324,33 @@ export default function Admin() {
               <p><strong>Important:</strong> This password will be stored securely and used for all future logins.</p>
               <p>If you forget your password, you'll need the reset key from your server's .env file to reset it.</p>
             </div>
+
+            <div className="password-suggestions">
+              <p><strong>Password Tips:</strong></p>
+              <ul>
+                <li>✓ At least 8 characters (12+ recommended)</li>
+                <li>✓ Mix uppercase and lowercase letters</li>
+                <li>✓ Include numbers</li>
+                <li>✓ Add special characters (!@#$%^&*)</li>
+              </ul>
+            </div>
             
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => handlePasswordChange(e.target.value)}
               placeholder="Create Password (min 6 characters)"
               className="admin-password-input"
             />
+
+            {passwordStrength && (
+              <div className={`password-strength ${passwordStrength}`}>
+                <div className="strength-bar"></div>
+                <span className="strength-label">
+                  Strength: {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                </span>
+              </div>
+            )}
             
             <input
               type="password"

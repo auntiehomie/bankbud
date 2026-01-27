@@ -36,8 +36,11 @@ router.get('/password-exists', async (req: Request, res: Response) => {
     const storedPassword = await getStoredPassword();
     const envPassword = process.env.ADMIN_PASSWORD;
     
+    // Only return true if there's an actual stored or env password (not relying on default)
+    const hasRealPassword = !!(storedPassword || envPassword);
+    
     res.json({ 
-      exists: !!(storedPassword || envPassword),
+      exists: hasRealPassword,
       source: storedPassword ? 'database' : (envPassword ? 'environment' : 'none')
     });
   } catch (error) {
@@ -46,20 +49,21 @@ router.get('/password-exists', async (req: Request, res: Response) => {
   }
 });
 
-// Set initial admin password (only works if no password exists)
+// Set initial admin password (overwrites default if no real password exists)
 router.post('/set-password', async (req: Request, res: Response) => {
   try {
-    const { password } = req.body;
+    const { password, overrideDefault } = req.body;
     
     if (!password || password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
     
-    // Check if password already exists
+    // Check if a REAL password already exists (not default)
     const existingPassword = await getStoredPassword();
     const envPassword = process.env.ADMIN_PASSWORD;
     
-    if (existingPassword || envPassword) {
+    // Allow override if only default exists
+    if ((existingPassword || envPassword) && !overrideDefault) {
       return res.status(403).json({ error: 'Admin password already exists' });
     }
     

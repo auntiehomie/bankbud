@@ -78,6 +78,81 @@
   color: var(--text);
 }
 
+.password-suggestions {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.password-suggestions p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.password-suggestions ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style: none;
+}
+
+.password-suggestions li {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.password-strength {
+  margin: 0.5rem 0 1rem 0;
+}
+
+.strength-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  margin-bottom: 0.25rem;
+  transition: all 0.3s;
+}
+
+.password-strength.weak .strength-bar {
+  width: 33%;
+  background: #ef4444;
+}
+
+.password-strength.medium .strength-bar {
+  width: 66%;
+  background: #f59e0b;
+}
+
+.password-strength.strong .strength-bar {
+  width: 100%;
+  background: #10b981;
+}
+
+.strength-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.password-strength.weak .strength-label {
+  color: #ef4444;
+}
+
+.password-strength.medium .strength-label {
+  color: #f59e0b;
+}
+
+.password-strength.strong .strength-label {
+  color: #10b981;
+}
+
 .btn-text {
   background: none;
   border: none;
