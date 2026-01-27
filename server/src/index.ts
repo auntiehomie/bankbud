@@ -10,6 +10,7 @@ import scraperRouter from './routes/scraper.js';
 import benchmarksRouter from './routes/benchmarks.js';
 import chatRouter from './routes/chat.js';
 import newsRouter from './routes/news.js';
+import adminRouter from './routes/admin.js';
 
 dotenv.config();
 
@@ -43,6 +44,8 @@ app.use('/api/chat', chatRouter);
 console.log('✓ Chat router registered');
 app.use('/api/news', newsRouter);
 console.log('✓ News router registered');
+app.use('/api/admin', adminRouter);
+console.log('✓ Admin router registered');
 
 // Health check
 app.get('/api/health', (req, res) => {

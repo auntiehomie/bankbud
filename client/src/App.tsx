@@ -6,6 +6,7 @@ import Submit from './pages/Submit';
 import Recommendations from './pages/Recommendations';
 import AIAdvisor from './pages/AIAdvisor';
 import News from './pages/News';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/ai-advisor" element={<AIAdvisor />} />
           <Route path="/news" element={<News />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </main>
     </div>
