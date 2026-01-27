@@ -1,12 +1,27 @@
 import express, { Request, Response, NextFunction } from 'express';
 import BankRate from '../models/BankRate.js';
+import AdminConfig from '../models/AdminConfig.js';
 
 const router = express.Router();
 
+// Get stored admin password from database
+async function getStoredPassword(): Promise<string | null> {
+  try {
+    const config = await AdminConfig.findOne({ key: 'admin_password' });
+    return config ? config.value : null;
+  } catch (error) {
+    console.error('Error fetching admin password:', error);
+    return null;
+  }
+}
+
 // Simple admin authentication middleware
-const adminAuth = (req: Request, res: Response, next: NextFunction) => {
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+const adminAuth = async (req: Request, res: Response, next: NextFunction) => {
   const providedPassword = req.headers['x-admin-password'];
+  const storedPassword = await getStoredPassword();
+  
+  // Fallback to env variable if no DB password
+  const adminPassword = storedPassword || process.env.ADMIN_PASSWORD || 'admin123';
 
   if (providedPassword !== adminPassword) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -14,6 +29,82 @@ const adminAuth = (req: Request, res: Response, next: NextFunction) => {
 
   next();
 };
+
+// Check if admin password exists
+router.get('/password-exists', async (req: Request, res: Response) => {
+  try {
+    const storedPassword = await getStoredPassword();
+    const envPassword = process.env.ADMIN_PASSWORD;
+    
+    res.json({ 
+      exists: !!(storedPassword || envPassword),
+      source: storedPassword ? 'database' : (envPassword ? 'environment' : 'none')
+    });
+  } catch (error) {
+    console.error('Error checking password existence:', error);
+    res.status(500).json({ error: 'Failed to check password status' });
+  }
+});
+
+// Set initial admin password (only works if no password exists)
+router.post('/set-password', async (req: Request, res: Response) => {
+  try {
+    const { password } = req.body;
+    
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    // Check if password already exists
+    const existingPassword = await getStoredPassword();
+    const envPassword = process.env.ADMIN_PASSWORD;
+    
+    if (existingPassword || envPassword) {
+      return res.status(403).json({ error: 'Admin password already exists' });
+    }
+    
+    // Store the password
+    await AdminConfig.findOneAndUpdate(
+      { key: 'admin_password' },
+      { key: 'admin_password', value: password },
+      { upsert: true, new: true }
+    );
+    
+    console.log('✓ Admin password created');
+    res.json({ message: 'Password created successfully' });
+  } catch (error) {
+    console.error('Error setting admin password:', error);
+    res.status(500).json({ error: 'Failed to set password' });
+  }
+});
+
+// Reset admin password (requires reset key from environment)
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { resetKey } = req.body;
+    const serverResetKey = process.env.ADMIN_RESET_KEY;
+    
+    if (!serverResetKey) {
+      return res.status(500).json({ 
+        error: 'Password reset not configured. Contact administrator.',
+        hint: 'Set ADMIN_RESET_KEY in server environment variables.'
+      });
+    }
+    
+    if (resetKey !== serverResetKey) {
+      return res.status(401).json({ error: 'Invalid reset key' });
+    }
+    
+    // Delete the stored password
+    await AdminConfig.findOneAndDelete({ key: 'admin_password' });
+    
+    console.log('✓ Admin password reset - can now create new password');
+    res.json({ message: 'Password reset successfully. You can now create a new password.' });
+  } catch (error) {
+    console.error('Error resetting admin password:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
 
 // Get all rates with admin details
 router.get('/rates', adminAuth, async (req: Request, res: Response) => {

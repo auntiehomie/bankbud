@@ -7,7 +7,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export default function Admin() {
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordExists, setPasswordExists] = useState<boolean | null>(null);
+  const [isCreatingPassword, setIsCreatingPassword] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetKey, setResetKey] = useState('');
   const [rates, setRates] = useState<BankRate[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -19,10 +24,26 @@ export default function Admin() {
   const [selectedRates, setSelectedRates] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    checkPasswordExists();
+  }, []);
+
+  useEffect(() => {
     if (isAuthenticated) {
       loadRates();
     }
   }, [isAuthenticated, dataSourceFilter, accountTypeFilter, sortBy]);
+
+  const checkPasswordExists = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/admin/password-exists`);
+      const data = await response.json();
+      setPasswordExists(data.exists);
+      setIsCreatingPassword(!data.exists);
+    } catch (err) {
+      console.error('Error checking password:', err);
+      setPasswordExists(true); // Assume password exists on error
+    }
+  };
 
   const loadData = async (pwd: string) => {
     await Promise.all([loadRates(pwd), loadStats(pwd)]);
@@ -98,6 +119,81 @@ export default function Admin() {
       }
     } catch (err) {
       setError('Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePassword = async () => {
+    setError('');
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/set-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      });
+
+      if (response.ok) {
+        setSuccessMessage('Password created successfully! Logging in...');
+        setTimeout(() => {
+          setPasswordExists(true);
+          setIsCreatingPassword(false);
+          setIsAuthenticated(true);
+          loadData(password);
+        }, 1500);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to create password');
+      }
+    } catch (err) {
+      setError('Failed to create password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ resetKey })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage(data.message);
+        setTimeout(() => {
+          setShowResetForm(false);
+          setResetKey('');
+          checkPasswordExists();
+        }, 2000);
+      } else {
+        setError(data.error || 'Invalid reset key');
+      }
+    } catch (err) {
+      setError('Failed to reset password');
     } finally {
       setLoading(false);
     }
@@ -181,6 +277,101 @@ export default function Admin() {
   };
 
   if (!isAuthenticated) {
+    if (passwordExists === null) {
+      return (
+        <div className="admin-login">
+          <div className="admin-login-card">
+            <Shield size={48} className="admin-icon" />
+            <p>Checking admin status...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isCreatingPassword) {
+      return (
+        <div className="admin-login">
+          <div className="admin-login-card">
+            <Shield size={48} className="admin-icon" />
+            <h1>Create Admin Password</h1>
+            <p>Set up your admin password (first time setup)</p>
+            
+            <div className="info-box">
+              <p><strong>Important:</strong> This password will be stored securely and used for all future logins.</p>
+              <p>If you forget your password, you'll need the reset key from your server's .env file to reset it.</p>
+            </div>
+            
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create Password (min 6 characters)"
+              className="admin-password-input"
+            />
+            
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleCreatePassword()}
+              placeholder="Confirm Password"
+              className="admin-password-input"
+            />
+            
+            <button onClick={handleCreatePassword} disabled={loading} className="btn btn-primary">
+              {loading ? 'Creating...' : 'Create Password'}
+            </button>
+            
+            {error && <div className="error-message">{error}</div>}
+            {successMessage && <div className="success-message">{successMessage}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    if (showResetForm) {
+      return (
+        <div className="admin-login">
+          <div className="admin-login-card">
+            <Shield size={48} className="admin-icon" />
+            <h1>Reset Admin Password</h1>
+            <p>Enter your reset key to reset the admin password</p>
+            
+            <div className="info-box">
+              <p><strong>Reset Key Location:</strong></p>
+              <p>Find your reset key in the server's .env file:</p>
+              <code>ADMIN_RESET_KEY=your_reset_key_here</code>
+              <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>If not set, contact your system administrator.</p>
+            </div>
+            
+            <input
+              type="text"
+              value={resetKey}
+              onChange={(e) => setResetKey(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleResetPassword()}
+              placeholder="Enter Reset Key"
+              className="admin-password-input"
+            />
+            
+            <button onClick={handleResetPassword} disabled={loading} className="btn btn-primary">
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </button>
+            
+            <button 
+              onClick={() => { setShowResetForm(false); setResetKey(''); setError(''); }}
+              className="btn btn-outline"
+              style={{ marginTop: '0.5rem' }}
+            >
+              Back to Login
+            </button>
+            
+            {error && <div className="error-message">{error}</div>}
+            {successMessage && <div className="success-message">{successMessage}</div>}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="admin-login">
         <div className="admin-login-card">
@@ -199,6 +390,14 @@ export default function Admin() {
           
           <button onClick={handleLogin} disabled={loading} className="btn btn-primary">
             {loading ? 'Authenticating...' : 'Login'}
+          </button>
+          
+          <button 
+            onClick={() => setShowResetForm(true)}
+            className="btn btn-text"
+            style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}
+          >
+            Forgot Password?
           </button>
           
           {error && <div className="error-message">{error}</div>}
