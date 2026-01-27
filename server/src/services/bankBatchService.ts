@@ -124,6 +124,29 @@ export async function geocodeZip(zipCode: string): Promise<{ lat: number, lon: n
   }
 }
 
+// Reverse geocode: convert lat/lon to zip code
+export async function reverseGeocodeToZip(lat: number, lon: number): Promise<string | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
+    const res = await axios.get(url, { 
+      headers: { 'User-Agent': 'bankbud/1.0' },
+      timeout: 5000
+    });
+    
+    if (res.data && res.data.address) {
+      const zipCode = res.data.address.postcode;
+      if (zipCode) {
+        console.log(`✓ Reverse geocoded (${lat}, ${lon}) to zip: ${zipCode}`);
+        return zipCode;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error('Reverse geocoding error:', err);
+    return null;
+  }
+}
+
 // Helper to get distance between two lat/lng points (Haversine formula)
 export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // km
@@ -161,8 +184,20 @@ export async function searchRatesAndDistancesForBanks(accountType = "savings", z
   
   // If user provided lat/lon, use that. Otherwise geocode the zip.
   let userCoords: { lat: number, lon: number } | null = null;
+  let detectedZip = zipCode;
+  
   if (userLat !== undefined && userLon !== undefined) {
     userCoords = { lat: userLat, lon: userLon };
+    
+    // If no zip code provided but we have coords, reverse geocode to get zip
+    if (!detectedZip) {
+      console.log('🌍 Reverse geocoding coordinates to zip code...');
+      const reverseZip = await reverseGeocodeToZip(userLat, userLon);
+      if (reverseZip) {
+        detectedZip = reverseZip;
+        console.log(`✓ Using detected zip code: ${detectedZip}`);
+      }
+    }
   } else if (zipCode) {
     userCoords = await geocodeZip(zipCode);
   }
@@ -181,7 +216,7 @@ export async function searchRatesAndDistancesForBanks(accountType = "savings", z
         const rate = await perplexityService.searchBankRatesWithPerplexity({ 
           bankName: bankInfo.name, 
           accountType, 
-          zipCode 
+          zipCode: detectedZip // Use the detected or provided zip code
         });
         const rateData = rate[0] || null;
         

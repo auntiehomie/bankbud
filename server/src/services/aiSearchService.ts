@@ -46,20 +46,22 @@ export async function searchAndExtractRates(
 
     try {
       console.log('Calling Perplexity for web search...');
-      const completion = await perplexity.chat.completions.create({
+      const stream = await perplexity.chat.completions.create({
         model: 'sonar',
         messages: [
           { role: 'user', content: prompt }
         ],
-        stream: false,
+        stream: true,
       });
 
-      const rawContent = completion.choices?.[0]?.message?.content;
-      const text = typeof rawContent === 'string' 
-        ? rawContent 
-        : Array.isArray(rawContent) 
-          ? rawContent.map((chunk: any) => chunk.text || '').join('') 
-          : '';
+      // Accumulate streamed response
+      let text = '';
+      for await (const chunk of stream) {
+        const content = chunk.choices?.[0]?.delta?.content;
+        if (content) {
+          text += content;
+        }
+      }
       
       // Log the full AI response for debugging
       console.log(`\n📝 Full Perplexity response for ${bankName}:`);

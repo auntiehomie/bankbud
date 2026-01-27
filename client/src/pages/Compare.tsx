@@ -24,6 +24,7 @@ export default function Compare() {
   const [totalBanks, setTotalBanks] = useState<number>(18);
   const [userLocation, setUserLocation] = useState<{ latitude: number, longitude: number } | null>(null);
   const [locationRequested, setLocationRequested] = useState(false);
+  const [detectedZipCode, setDetectedZipCode] = useState<string>('');
 
   const CACHE_KEY = 'bankbud_rates_cache';
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -444,11 +445,13 @@ export default function Compare() {
                 }
                 
                 setLocationRequested(true);
+                setLoadingMessage('Getting your location...');
                 navigator.geolocation.getCurrentPosition(
                   (position) => {
                     const { latitude, longitude } = position.coords;
                     setUserLocation({ latitude, longitude });
                     setZipCode(''); // Clear zip when using location
+                    setLoadingMessage('Detecting your zip code...');
                     loadRates(); // Reload with new location
                   },
                   (error) => {
@@ -465,13 +468,32 @@ export default function Compare() {
             {userLocation && (
               <button 
                 className="btn-small btn-text" 
-                onClick={() => { setUserLocation(null); setLocationRequested(false); loadRates(); }}
+                onClick={() => { 
+                  setUserLocation(null); 
+                  setLocationRequested(false); 
+                  setDetectedZipCode('');
+                  loadRates(); 
+                }}
               >
                 Clear Location
               </button>
             )}
           </div>
         </div>
+
+        {/* Show detected zip code when using geolocation */}
+        {userLocation && (
+          <div style={{ 
+            textAlign: 'center', 
+            fontSize: '0.875rem', 
+            color: 'var(--text-secondary)',
+            marginTop: '0.5rem',
+            marginBottom: '1rem'
+          }}>
+            📍 Searching rates near your location
+            {detectedZipCode && ` (ZIP: ${detectedZipCode})`}
+          </div>
+        )}
 
         <BenchmarkRates />
 
@@ -835,8 +857,15 @@ function RateCard({
         <div className="verification-info-section">
           <button 
             className="verification-info-button"
-            onClick={() => rate.scrapedUrl && window.open(rate.scrapedUrl, '_blank')}
-            title="View verification sources"
+            onClick={() => {
+              if (rate.scrapedUrl) {
+                window.open(rate.scrapedUrl, '_blank');
+              }
+            }}
+            title={rate.scrapedUrl 
+              ? `Last verified: ${new Date(rate.lastVerified).toLocaleDateString()}\nClick to view source` 
+              : `Last verified: ${new Date(rate.lastVerified).toLocaleDateString()}\nNo source URL available`}
+            style={{ cursor: rate.scrapedUrl ? 'pointer' : 'default' }}
           >
             <CheckCircle size={16} />
             <span>{rate.verifications} verified</span>

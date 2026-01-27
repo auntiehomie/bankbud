@@ -113,5 +113,13 @@ const BankRateSchema = new Schema<IBankRate>(
 BankRateSchema.index({ accountType: 1, rate: -1 });
 BankRateSchema.index({ bankName: 1 });
 BankRateSchema.index({ verifications: -1 });
+BankRateSchema.index({ dataSource: 1 });
+BankRateSchema.index({ apy: -1 });
+BankRateSchema.index({ 'location.zipCode': 1 });
+BankRateSchema.index({ 'location.state': 1 });
+BankRateSchema.index({ availability: 1 });
+// Compound indexes for common query patterns
+BankRateSchema.index({ accountType: 1, dataSource: 1, apy: -1 });
+BankRateSchema.index({ accountType: 1, availability: 1, apy: -1 });
 
 export default mongoose.model<IBankRate>('BankRate', BankRateSchema);
