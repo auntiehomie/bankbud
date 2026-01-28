@@ -75,6 +75,27 @@ const banks: BankInfo[] = [
     phone: "1-616-242-9790",
     mainBranch: { address: "525 Leonard St NW", city: "Grand Rapids", state: "MI", zip: "49504", lat: 42.9817, lon: -85.6742 }
   },
+  { 
+    name: "Community Choice Credit Union", 
+    type: "credit-union", 
+    serviceModel: "branch", 
+    phone: "1-734-523-2900",
+    mainBranch: { address: "39500 High Pointe Blvd", city: "Novi", state: "MI", zip: "48375", lat: 42.4862, lon: -83.4755 }
+  },
+  { 
+    name: "Genisys Credit Union", 
+    type: "credit-union", 
+    serviceModel: "branch", 
+    phone: "1-248-322-9800",
+    mainBranch: { address: "27000 Dequindre Rd", city: "Auburn Hills", state: "MI", zip: "48326", lat: 42.6536, lon: -83.1730 }
+  },
+  { 
+    name: "Chief Financial Credit Union", 
+    type: "credit-union", 
+    serviceModel: "branch", 
+    phone: "1-888-288-4328",
+    mainBranch: { address: "3901 Research Park Dr", city: "Ann Arbor", state: "MI", zip: "48108", lat: 42.3009, lon: -83.7054 }
+  },
   
   // National Branch Banks
   { 

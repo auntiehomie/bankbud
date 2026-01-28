@@ -758,6 +758,13 @@ function RateCard({
           {rate.dataSource === 'community' && (
             <span className="data-source-badge community">👥 Community</span>
           )}
+          {rate.distance !== undefined && rate.distance !== null && (
+            <span className="distance-badge" title="Distance from your location">
+              📍 {rate.distance < 1 
+                ? `${(rate.distance * 1000).toFixed(0)}m away` 
+                : `${rate.distance.toFixed(1)} km away`}
+            </span>
+          )}
           {rate.location && (
             <div className="location-info">
               {rate.location.city && rate.location.state && (
