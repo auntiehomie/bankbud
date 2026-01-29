@@ -69,23 +69,23 @@ export default function Home() {
           </p>
           
           <div className="hero-features">
-            <div className="feature-card">
+            <Link to="/ai-advisor" className="feature-card">
               <MessageCircle size={48} />
               <h3>BankBud Chat</h3>
               <p>Chat with BankBud to get personalized banking advice</p>
-            </div>
+            </Link>
             
-            <div className="feature-card">
+            <Link to="/compare" className="feature-card">
               <TrendingUp size={48} />
               <h3>Best Rates</h3>
               <p>Compare real-time rates from banks across the country</p>
-            </div>
+            </Link>
             
-            <div className="feature-card">
+            <Link to="/submit" className="feature-card">
               <Users size={48} />
               <h3>Community Verified</h3>
               <p>Rates submitted and verified by users like you</p>
-            </div>
+            </Link>
           </div>
           
           <div className="hero-actions">

@@ -32,8 +32,11 @@
   backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 1rem;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
   border: 1px solid rgba(255, 255, 255, 0.3);
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
 }
 
 .feature-card:hover {

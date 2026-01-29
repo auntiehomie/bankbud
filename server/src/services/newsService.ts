@@ -23,13 +23,17 @@ export async function fetchBankingNews(limit: number = 6): Promise<NewsArticle[]
   try {
     const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     
-    const prompt = `Find the ${limit} most recent and important banking and finance news articles from ${currentDate}. Focus on:
+    const prompt = `Find the ${limit} most recent and important banking, personal finance, and money management news articles from ${currentDate}. Focus on:
     - Interest rate changes and announcements
-    - New banking products or services
-    - Federal Reserve decisions
-    - Bank mergers or acquisitions
+    - Banking products and services (savings accounts, CDs, checking accounts)
+    - Federal Reserve decisions and monetary policy
+    - Personal finance tips and money-saving strategies
+    - Budgeting advice and financial planning
+    - Savings strategies and investment tips for beginners
+    - Credit card offers and consumer banking updates
     - Financial regulations affecting consumers
-    - Savings account and CD rate trends
+    - Money management best practices
+    - Retirement savings and emergency fund guidance
     
     For each article, provide:
     1. A clear, concise title
@@ -37,7 +41,7 @@ export async function fetchBankingNews(limit: number = 6): Promise<NewsArticle[]
     3. The source publication
     4. The article URL
     5. The publication date
-    6. Category (rate-change, new-product, regulation, fed-news, or market-trend)
+    6. Category (rate-change, new-product, regulation, fed-news, market-trend, money-tips, or savings-advice)
     
     Format as a list of articles with these fields clearly labeled.`;
 

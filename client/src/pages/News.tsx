@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Newspaper, TrendingUp, AlertCircle, Building2, Users, Scale } from 'lucide-react';
+import { Newspaper, TrendingUp, AlertCircle, Building2, Users, Scale, DollarSign, PiggyBank } from 'lucide-react';
 import { api } from '../utils/api';
 import './News.css';
 
@@ -38,7 +38,9 @@ export default function News() {
     'new-product': <Building2 size={20} />,
     'regulation': <Scale size={20} />,
     'fed-news': <AlertCircle size={20} />,
-    'market-trend': <Users size={20} />
+    'market-trend': <Users size={20} />,
+    'money-tips': <DollarSign size={20} />,
+    'savings-advice': <PiggyBank size={20} />
   };
 
   const categoryLabels: Record<string, string> = {
@@ -46,7 +48,9 @@ export default function News() {
     'new-product': 'New Product',
     'regulation': 'Regulation',
     'fed-news': 'Federal Reserve',
-    'market-trend': 'Market Trend'
+    'market-trend': 'Market Trend',
+    'money-tips': 'Money Tips',
+    'savings-advice': 'Savings Advice'
   };
 
   const filteredNews = filter === 'all' 
@@ -112,6 +116,20 @@ export default function News() {
           >
             <Scale size={16} />
             Regulations
+          </button>
+          <button 
+            className={`filter-btn ${filter === 'money-tips' ? 'active' : ''}`}
+            onClick={() => setFilter('money-tips')}
+          >
+            <DollarSign size={16} />
+            Money Tips
+          </button>
+          <button 
+            className={`filter-btn ${filter === 'savings-advice' ? 'active' : ''}`}
+            onClick={() => setFilter('savings-advice')}
+          >
+            <PiggyBank size={16} />
+            Savings Advice
           </button>
         </div>
 
