@@ -24,6 +24,7 @@ export interface IBankRate extends Document {
   dataSource: 'community' | 'scraped' | 'api';
   lastScraped?: Date;
   scrapedUrl?: string;
+  distanceKm?: number;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -4,6 +4,8 @@ import { api } from '../utils/api';
 import { BankRate } from '../types';
 import { useStore } from '../store';
 import BenchmarkRates from '../components/BenchmarkRates';
+import SavingsCalculator from '../components/SavingsCalculator';
+import Comments from '../components/Comments';
 import './Compare.css';
 
 export default function Compare() {
@@ -844,6 +846,17 @@ function RateCard({
             ))}
           </div>
         )}
+
+        {/* Savings Calculator - only show for savings accounts and CDs with valid rates */}
+        {(rate.accountType === 'savings' || rate.accountType === 'high-yield-savings' || rate.accountType === 'cd') && 
+         (rate.apy || rate.rate) && 
+         (rate.apy > 0 || rate.rate > 0) && (
+          <SavingsCalculator 
+            currentRate={0.50} 
+            newRate={rate.apy || rate.rate || 0} 
+            bankName={rate.bankName}
+          />
+        )}
         
         {/* Show "Submit Rate" button if no rate is available */}
         {(!rate.apy && !rate.rate) || rate.apy === 0 && (
@@ -907,6 +920,14 @@ function RateCard({
               🔗 Source
             </a>
           )}
+          <a 
+            href={`/rate-alerts?accountType=${rate.accountType}&targetRate=${rate.apy || rate.rate || 0}`}
+            className="btn-small btn-primary"
+            title="Get notified when rates like this are available"
+            style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}
+          >
+            🔔 Alert
+          </a>
           <button 
             className="btn-small btn-outline" 
             onClick={() => onVerify(rate._id, rate)}
@@ -921,6 +942,9 @@ function RateCard({
           </button>
         </div>
       </div>
+
+      {/* Comments Section */}
+      <Comments bankName={rate.bankName} accountType={rate.accountType} />
     </div>
   );
 }

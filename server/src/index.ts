@@ -12,6 +12,8 @@ import chatRouter from './routes/chat.js';
 import newsRouter from './routes/news.js';
 import adminRouter from './routes/admin.js';
 import adminAuthRouter from './routes/adminAuth.js';
+import rateAlertsRouter from './routes/rateAlerts.js';
+import commentsRouter from './routes/comments.js';
 
 dotenv.config();
 
@@ -48,6 +50,11 @@ console.log('✓ News router registered');
 app.use('/api/admin', adminAuthRouter);
 console.log('✓ Admin router registered');
 app.use('/api/admin-legacy', adminRouter);
+console.log('✓ Admin legacy router registered');
+app.use('/api/rate-alerts', rateAlertsRouter);
+console.log('✓ Rate alerts router registered');
+app.use('/api/comments', commentsRouter);
+console.log('✓ Comments router registered');
 console.log('✓ Admin legacy router registered');
 
 // Health check
@@ -142,6 +149,23 @@ const startServer = async () => {
   });
   
   console.log('⏰ Scheduled daily AI rate updates at 2:00 AM');
+
+  // Schedule rate alert checks at 9:00 AM daily
+  cron.schedule('0 9 * * *', async () => {
+    console.log('⏰ Running scheduled rate alert check...');
+    try {
+      const response = await fetch(`http://localhost:${PORT}/api/rate-alerts/check-and-notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      console.log(`✅ Rate alert check complete: ${data.notificationsSent} notifications sent`);
+    } catch (error) {
+      console.error('❌ Rate alert check failed:', error);
+    }
+  });
+
+  console.log('⏰ Scheduled daily rate alert checks at 9:00 AM');
 };
 
 startServer();

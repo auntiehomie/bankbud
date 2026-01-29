@@ -6,6 +6,8 @@ import Submit from './pages/Submit';
 import Recommendations from './pages/Recommendations';
 import AIAdvisor from './pages/AIAdvisor';
 import News from './pages/News';
+import RateAlerts from './pages/RateAlerts';
+import Dashboard from './pages/Dashboard';
 import Admin from './pages/AdminNew';
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/ai-advisor" element={<AIAdvisor />} />
           <Route path="/news" element={<News />} />
+          <Route path="/rate-alerts" element={<RateAlerts />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
       </main>
