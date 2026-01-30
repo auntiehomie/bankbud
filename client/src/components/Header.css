@@ -30,7 +30,8 @@
 
 .nav {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -40,9 +41,11 @@
   color: var(--text);
   font-weight: 500;
   text-decoration: none;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   transition: all 0.2s;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
