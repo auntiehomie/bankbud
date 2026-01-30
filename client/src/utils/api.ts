@@ -99,5 +99,21 @@ export const api = {
   refreshRates: async () => {
     const response = await axios.post(`${API_BASE}/rates/refresh`);
     return response.data;
+  },
+
+  // Generic HTTP methods for new features (rate alerts, comments, etc.)
+  get: async (endpoint: string, params?: any) => {
+    const response = await axios.get(`${API_BASE}${endpoint}`, { params });
+    return response.data;
+  },
+
+  post: async (endpoint: string, data?: any) => {
+    const response = await axios.post(`${API_BASE}${endpoint}`, data);
+    return response.data;
+  },
+
+  delete: async (endpoint: string) => {
+    const response = await axios.delete(`${API_BASE}${endpoint}`);
+    return response.data;
   }
 };
