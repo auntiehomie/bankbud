@@ -1,7 +1,7 @@
 import express from 'express';
-import { RateAlert } from '../models/RateAlert';
-import { IBankRate } from '../models/BankRate';
-import { sendRateAlertEmail } from '../services/rateAlertService';
+import { RateAlert } from '../models/RateAlert.js';
+import { IBankRate } from '../models/BankRate.js';
+import { sendRateAlertEmail } from '../services/rateAlertService.js';
 import mongoose from 'mongoose';
 
 const router = express.Router();
