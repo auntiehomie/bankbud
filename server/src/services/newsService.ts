@@ -19,6 +19,62 @@ export interface NewsArticle {
   category: string;
 }
 
+// Fallback news articles when API fails
+function getFallbackNews(): NewsArticle[] {
+  const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  
+  return [
+    {
+      title: "Federal Reserve Maintains Steady Interest Rate Policy",
+      summary: "The Federal Reserve continues its current monetary policy stance, keeping rates stable as inflation shows signs of cooling. This maintains favorable conditions for savers looking at high-yield savings accounts.",
+      source: "Federal Reserve",
+      url: "https://www.federalreserve.gov/",
+      date: today,
+      category: "fed-news"
+    },
+    {
+      title: "Best High-Yield Savings Accounts Offering Over 4% APY",
+      summary: "Several online banks continue to offer competitive rates above 4% APY for high-yield savings accounts. Compare rates on BankBud to find the best options for your savings goals.",
+      source: "BankBud",
+      url: "/compare",
+      date: today,
+      category: "savings-advice"
+    },
+    {
+      title: "Building an Emergency Fund: How Much Do You Really Need?",
+      summary: "Financial experts recommend saving 3-6 months of expenses in an easily accessible savings account. Learn how to calculate your emergency fund target and choose the right account type.",
+      source: "BankBud",
+      url: "/ai-advisor",
+      date: today,
+      category: "money-tips"
+    },
+    {
+      title: "CD Rates Remain Attractive for Long-Term Savers",
+      summary: "Certificate of Deposit rates continue to offer solid returns for those willing to lock in their money. Compare CD terms and rates to maximize your savings potential.",
+      source: "BankBud",
+      url: "/compare",
+      date: today,
+      category: "rate-change"
+    },
+    {
+      title: "Smart Banking: Tips for Choosing the Right Account",
+      summary: "Selecting the right bank account depends on your financial goals, access needs, and savings timeline. Consider factors like APY, minimum deposits, and account fees when comparing options.",
+      source: "BankBud",
+      url: "/recommendations",
+      date: today,
+      category: "money-tips"
+    },
+    {
+      title: "FDIC Insurance: Protecting Your Deposits",
+      summary: "Understanding FDIC insurance is crucial for bank account safety. Learn how the $250,000 coverage limit works and strategies for protecting larger deposit amounts.",
+      source: "FDIC",
+      url: "https://www.fdic.gov/",
+      date: today,
+      category: "regulation"
+    }
+  ];
+}
+
 export async function fetchBankingNews(limit: number = 6): Promise<NewsArticle[]> {
   try {
     const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -58,19 +114,25 @@ export async function fetchBankingNews(limit: number = 6): Promise<NewsArticle[]
     const text = typeof content === 'string' ? content : '';
     
     if (!text) {
-      console.error('No response from Perplexity for news');
-      return [];
+      console.error('No response from Perplexity for news, using fallback');
+      return getFallbackNews();
     }
     
     // Parse the response to extract news articles
     const articles = parseNewsArticles(text);
     
+    // If parsing fails or returns no articles, use fallback
+    if (articles.length === 0) {
+      console.log('No articles parsed from response, using fallback news');
+      return getFallbackNews();
+    }
+    
     console.log(`Fetched ${articles.length} banking news articles`);
     return articles;
     
   } catch (error) {
-    console.error('Error fetching banking news:', error);
-    return [];
+    console.error('Error fetching banking news, using fallback:', error);
+    return getFallbackNews();
   }
 }
 
