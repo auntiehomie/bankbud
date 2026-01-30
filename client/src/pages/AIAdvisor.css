@@ -380,11 +380,40 @@
 
 @media (max-width: 768px) {
   .chat-container {
-    height: 500px;
+    height: calc(100vh - 200px);
+    min-height: 400px;
+  }
+
+  .messages-container {
+    padding: 1rem;
   }
 
   .message-content {
     max-width: 85%;
+  }
+
+  .starter-questions,
+  .suggestions,
+  .chat-input-form {
+    padding: 1rem;
+  }
+
+  .chat-input-form {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    gap: 0.5rem;
+  }
+
+  .chat-input {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-send {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
   }
 
   .starter-buttons {
