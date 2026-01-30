@@ -8,6 +8,7 @@ import AIAdvisor from './pages/AIAdvisor';
 import News from './pages/News';
 import RateAlerts from './pages/RateAlerts';
 import Dashboard from './pages/Dashboard';
+import Forum from './pages/Forum';
 import Admin from './pages/AdminNew';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/news" element={<News />} />
           <Route path="/rate-alerts" element={<RateAlerts />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/forum" element={<Forum />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
       </main>

@@ -14,6 +14,7 @@ import adminRouter from './routes/admin.js';
 import adminAuthRouter from './routes/adminAuth.js';
 import rateAlertsRouter from './routes/rateAlerts.js';
 import commentsRouter from './routes/comments.js';
+import forumRouter from './routes/forum.js';
 
 dotenv.config();
 
@@ -55,6 +56,8 @@ app.use('/api/rate-alerts', rateAlertsRouter);
 console.log('✓ Rate alerts router registered');
 app.use('/api/comments', commentsRouter);
 console.log('✓ Comments router registered');
+app.use('/api/forum', forumRouter);
+console.log('✓ Forum router registered');
 console.log('✓ Admin legacy router registered');
 
 // Health check
