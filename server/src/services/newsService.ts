@@ -2,13 +2,15 @@ import Perplexity from '@perplexity-ai/perplexity_ai';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
-if (!PERPLEXITY_API_KEY) {
-  throw new Error('PERPLEXITY_API_KEY is not set in environment variables');
-}
+let client: Perplexity | null = null;
 
-const client = new Perplexity({
-  apiKey: PERPLEXITY_API_KEY
-});
+if (PERPLEXITY_API_KEY) {
+  client = new Perplexity({
+    apiKey: PERPLEXITY_API_KEY
+  });
+} else {
+  console.warn('⚠️  PERPLEXITY_API_KEY is not set. News service will use fallback data only.');
+}
 
 export interface NewsArticle {
   title: string;
@@ -77,6 +79,12 @@ function getFallbackNews(): NewsArticle[] {
 
 export async function fetchBankingNews(limit: number = 6): Promise<NewsArticle[]> {
   try {
+    // If client is not initialized, use fallback immediately
+    if (!client) {
+      console.log('Perplexity client not initialized, using fallback news');
+      return getFallbackNews();
+    }
+    
     const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     
     const prompt = `Find the ${limit} most recent and important banking, personal finance, and money management news articles from ${currentDate}. Focus on:

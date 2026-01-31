@@ -6,14 +6,18 @@ import { scrapeBankRate } from './scraperApiService.js';
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 
 if (!PERPLEXITY_API_KEY) {
-  throw new Error('PERPLEXITY_API_KEY is not set in environment variables');
+  console.warn('⚠️  PERPLEXITY_API_KEY is not set in environment variables. Perplexity features will be disabled.');
 }
 
-const client = new Perplexity({
+const client = PERPLEXITY_API_KEY ? new Perplexity({
   apiKey: PERPLEXITY_API_KEY
-});
+}) : null;
 
 export async function searchBankRatesWithPerplexity({ bankName, accountType = 'savings', zipCode }: { bankName?: string; accountType?: string; zipCode?: string }): Promise<any[]> {
+  if (!client) {
+    throw new Error('Perplexity client not initialized. Please set PERPLEXITY_API_KEY.');
+  }
+  
   const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   
   // Get the specific URL for this bank and account type
