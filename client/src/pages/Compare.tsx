@@ -27,6 +27,14 @@ export default function Compare() {
   const [userLocation, setUserLocation] = useState<{ latitude: number, longitude: number } | null>(null);
   const [locationRequested, setLocationRequested] = useState(false);
   const [detectedZipCode, setDetectedZipCode] = useState<string>('');
+  
+  // Zip code search
+  const [zipSearchQuery, setZipSearchQuery] = useState<string>('');
+  const [zipSearchType, setZipSearchType] = useState<'savings' | 'checking' | 'cd'>('savings');
+  const [zipSearchResults, setZipSearchResults] = useState<any[]>([]);
+  const [zipSearchLoading, setZipSearchLoading] = useState(false);
+  const [zipSearchError, setZipSearchError] = useState<string | null>(null);
+  const [showZipResults, setShowZipResults] = useState(false);
 
   const CACHE_KEY = 'bankbud_rates_cache';
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -280,6 +288,47 @@ export default function Compare() {
     setReportReason('');
   };
 
+  // Zip code search handler
+  const handleZipSearch = async () => {
+    if (!zipSearchQuery.trim()) {
+      setZipSearchError('Please enter a zip code or location');
+      return;
+    }
+
+    setZipSearchLoading(true);
+    setZipSearchError(null);
+    setZipSearchResults([]);
+
+    try {
+      // Determine if it's a zip code (5 digits) or location name
+      const isZipCode = /^\d{5}$/.test(zipSearchQuery.trim());
+      
+      const endpoint = isZipCode ? '/scraper/search-by-zip' : '/scraper/search-by-location';
+      const body = isZipCode 
+        ? { zipCode: zipSearchQuery.trim(), accountType: zipSearchType }
+        : { location: zipSearchQuery.trim(), accountType: zipSearchType };
+
+      console.log(`🔍 Searching with ${isZipCode ? 'zip code' : 'location'}:`, zipSearchQuery);
+
+      const response = await api.post(endpoint, body);
+      
+      if (response.rates && response.rates.length > 0) {
+        setZipSearchResults(response.rates);
+        setShowZipResults(true);
+        setZipSearchError(null);
+      } else {
+        setZipSearchError('No rates found for this location. Try a different zip code or location.');
+        setShowZipResults(false);
+      }
+    } catch (error: any) {
+      console.error('Zip search error:', error);
+      setZipSearchError(error.response?.data?.error || 'Failed to search rates. Please try again.');
+      setShowZipResults(false);
+    } finally {
+      setZipSearchLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -494,6 +543,217 @@ export default function Compare() {
           }}>
             📍 Searching rates near your location
             {detectedZipCode && ` (ZIP: ${detectedZipCode})`}
+          </div>
+        )}
+
+        {/* Zip Code Rate Search */}
+        <div className="zip-search-section" style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '1rem',
+          padding: '2rem',
+          marginBottom: '2rem',
+          color: 'white'
+        }}>
+          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>
+            🔍 Search Local Rates by Zip Code
+          </h2>
+          <p style={{ margin: '0 0 1.5rem 0', opacity: 0.9, fontSize: '0.95rem' }}>
+            Find rates from Michigan banks and credit unions in your area
+          </p>
+          
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: '1', minWidth: '200px' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                Zip Code or Location
+              </label>
+              <input
+                type="text"
+                value={zipSearchQuery}
+                onChange={(e) => setZipSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleZipSearch()}
+                placeholder="e.g., 48302 or Bloomfield Hills, MI"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  fontSize: '1rem'
+                }}
+              />
+            </div>
+            
+            <div style={{ minWidth: '150px' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                Account Type
+              </label>
+              <select
+                value={zipSearchType}
+                onChange={(e) => setZipSearchType(e.target.value as 'savings' | 'checking' | 'cd')}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  fontSize: '1rem'
+                }}
+              >
+                <option value="savings">Savings</option>
+                <option value="checking">Checking</option>
+                <option value="cd">CDs</option>
+              </select>
+            </div>
+            
+            <button
+              onClick={handleZipSearch}
+              disabled={zipSearchLoading}
+              style={{
+                padding: '0.75rem 2rem',
+                borderRadius: '0.5rem',
+                border: 'none',
+                background: 'white',
+                color: '#667eea',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: zipSearchLoading ? 'not-allowed' : 'pointer',
+                opacity: zipSearchLoading ? 0.7 : 1,
+                transition: 'all 0.2s'
+              }}
+            >
+              {zipSearchLoading ? '🔄 Searching...' : '🔍 Search'}
+            </button>
+          </div>
+          
+          {zipSearchError && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255, 255, 255, 0.3)'
+            }}>
+              ⚠️ {zipSearchError}
+            </div>
+          )}
+          
+          {zipSearchLoading && (
+            <div style={{
+              marginTop: '1rem',
+              textAlign: 'center',
+              padding: '1rem'
+            }}>
+              <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>
+              <p style={{ margin: 0, opacity: 0.9 }}>
+                Searching Bankrate, NerdWallet, and DepositAccounts...
+              </p>
+              <p style={{ margin: '0.5rem 0 0', opacity: 0.7, fontSize: '0.875rem' }}>
+                This may take 20-30 seconds
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Zip Search Results */}
+        {showZipResults && zipSearchResults.length > 0 && (
+          <div className="zip-results-section" style={{
+            marginBottom: '2rem',
+            background: 'var(--surface)',
+            borderRadius: '1rem',
+            padding: '2rem',
+            border: '2px solid var(--primary)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.5rem' }}>
+                📍 Found {zipSearchResults.length} Local Rates
+              </h2>
+              <button
+                onClick={() => setShowZipResults(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.5rem',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="rates-grid">
+              {zipSearchResults.slice(0, 10).map((rate, index) => (
+                <div key={index} className="rate-card" style={{
+                  background: 'white',
+                  border: '1px solid var(--border)',
+                  borderRadius: '0.75rem',
+                  padding: '1.5rem',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div>
+                      <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', color: 'var(--text-primary)' }}>
+                        {rate.bankName}
+                      </h3>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                        {rate.accountType.charAt(0).toUpperCase() + rate.accountType.slice(1)} Account
+                      </div>
+                    </div>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      padding: '0.75rem 1.25rem',
+                      borderRadius: '0.5rem',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', lineHeight: 1 }}>
+                        {rate.apy ? rate.apy.toFixed(2) : '—'}%
+                      </div>
+                      <div style={{ fontSize: '0.75rem', opacity: 0.9, marginTop: '0.25rem' }}>
+                        APY
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '0.5rem', 
+                    flexWrap: 'wrap',
+                    fontSize: '0.875rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <span>📍 ZIP: {rate.zipCode}</span>
+                    <span>•</span>
+                    <span>🔗 Source: {rate.sourceUrl.includes('bankrate') ? 'Bankrate' : rate.sourceUrl.includes('nerdwallet') ? 'NerdWallet' : 'DepositAccounts'}</span>
+                  </div>
+                  
+                  {rate.sourceUrl && (
+                    <a 
+                      href={rate.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        marginTop: '1rem',
+                        padding: '0.5rem 1rem',
+                        background: 'var(--primary)',
+                        color: 'white',
+                        borderRadius: '0.5rem',
+                        textDecoration: 'none',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      View Details →
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {zipSearchResults.length > 10 && (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '1rem' }}>
+                Showing top 10 of {zipSearchResults.length} results
+              </p>
+            )}
           </div>
         )}
 
