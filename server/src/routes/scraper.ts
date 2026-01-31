@@ -2,6 +2,7 @@ import { searchRatesAndDistancesForBanks } from '../services/bankBatchService.js
 import { Router, Request, Response } from 'express';
 import { updateBankRatesWithSearch, listAvailableGeminiModels, searchAndExtractRates } from '../services/aiSearchService.js';
 import { searchBankRatesWithPerplexity } from '../services/perplexityService.js';
+import { searchAllSourcesByZip, searchByLocation, getZipCodeForLocation } from '../services/zipCodeRateService.js';
 
 const router = Router();
 
@@ -223,6 +224,73 @@ router.post('/ai-update-bank', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error initiating AI bank update:', error);
     res.status(500).json({ error: 'Failed to initiate AI bank update' });
+  }
+});
+
+// Search rates by zip code across multiple aggregator sites
+router.post('/search-by-zip', async (req: Request, res: Response) => {
+  try {
+    const { zipCode, accountType } = req.body;
+    
+    if (!zipCode) {
+      return res.status(400).json({ error: 'zipCode is required' });
+    }
+    
+    const validAccountTypes = ['checking', 'savings', 'cd'];
+    const type = validAccountTypes.includes(accountType) ? accountType : 'savings';
+    
+    console.log(`\n🔍 API: Searching for ${type} rates near ZIP ${zipCode}`);
+    
+    const rates = await searchAllSourcesByZip(zipCode, type as any);
+    
+    res.json({
+      message: `Found ${rates.length} ${type} rates near ${zipCode}`,
+      zipCode,
+      accountType: type,
+      rates
+    });
+  } catch (error: any) {
+    console.error('Error in zip code search:', error);
+    res.status(500).json({ error: 'Failed to search rates by zip code', details: error.message });
+  }
+});
+
+// Search rates by location name (e.g., "Bloomfield Hills, MI")
+router.post('/search-by-location', async (req: Request, res: Response) => {
+  try {
+    const { location, accountType } = req.body;
+    
+    if (!location) {
+      return res.status(400).json({ error: 'location is required (e.g., "Bloomfield Hills, MI")' });
+    }
+    
+    const validAccountTypes = ['checking', 'savings', 'cd'];
+    const type = validAccountTypes.includes(accountType) ? accountType : 'savings';
+    
+    console.log(`\n📍 API: Searching for ${type} rates in ${location}`);
+    
+    // First get the zip code for this location
+    const zipCode = await getZipCodeForLocation(location);
+    
+    if (!zipCode) {
+      return res.status(404).json({ 
+        error: 'Could not find zip code for this location',
+        location 
+      });
+    }
+    
+    const rates = await searchAllSourcesByZip(zipCode, type as any);
+    
+    res.json({
+      message: `Found ${rates.length} ${type} rates in ${location}`,
+      location,
+      zipCode,
+      accountType: type,
+      rates
+    });
+  } catch (error: any) {
+    console.error('Error in location search:', error);
+    res.status(500).json({ error: 'Failed to search rates by location', details: error.message });
   }
 });
 
